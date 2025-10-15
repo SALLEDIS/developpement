@@ -1,19 +1,18 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { Product, Category } from '../types';
-import { supabase } from '../lib/supabase';
+import { mockCategories } from '../data/mockData';
 
 interface ProductContextType {
   products: Product[];
   categories: Category[];
-  addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
-  updateProduct: (id: string, product: Partial<Omit<Product, 'id'>>) => Promise<void>;
-  deleteProduct: (id: string) => Promise<void>;
-  addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
-  updateCategory: (id: string, category: Partial<Omit<Category, 'id'>>) => Promise<void>;
-  deleteCategory: (id: string) => Promise<void>;
+  addProduct: (product: Omit<Product, 'id'>) => void;
+  updateProduct: (id: string, product: Omit<Product, 'id'>) => void;
+  deleteProduct: (id: string) => void;
+  addCategory: (category: Omit<Category, 'id'>) => void;
+  updateCategory: (id: string, category: Omit<Category, 'id'>) => void;
+  deleteCategory: (id: string) => void;
   getActiveProducts: () => Product[];
   getProductsByCategory: (categoryName: string) => Product[];
-  isLoading: boolean;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
@@ -28,230 +27,190 @@ export const useProducts = () => {
 
 export const useProductProvider = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>(mockCategories);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Charger les catégories depuis Supabase
-  const loadCategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-
-      if (data) {
-        const formattedCategories: Category[] = data.map(cat => ({
-          id: cat.id,
-          name: cat.name,
-          description: cat.description || '',
-          isActive: cat.is_active,
-        }));
-        setCategories(formattedCategories);
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des catégories:', error);
-    }
-  };
-
-  // Charger les produits depuis Supabase
-  const loadProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-
-      if (data) {
-        const formattedProducts: Product[] = data.map(prod => ({
-          id: prod.id,
-          name: prod.name,
-          description: prod.description || '',
-          category: prod.category,
-          price: Number(prod.price),
-          sizes: prod.sizes,
-          image: prod.image || undefined,
-          printer: prod.printer || undefined,
-          isActive: prod.is_active,
-          stockQuantity: prod.stock_quantity,
-        }));
-        setProducts(formattedProducts);
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des produits:', error);
-    }
-  };
-
-  // Chargement initial
+  // Chargement initial des données
   useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      await Promise.all([loadCategories(), loadProducts()]);
-      setIsLoading(false);
-    };
-    loadData();
-  }, []);
-
-  const addProduct = async (product: Omit<Product, 'id'>) => {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .insert({
-          name: product.name,
-          description: product.description || null,
-          category: product.category,
-          price: product.price,
-          sizes: product.sizes || null,
-          image: product.image || null,
-          printer: product.printer || null,
-          is_active: product.isActive,
-          stock_quantity: product.stockQuantity || 0,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        const newProduct: Product = {
-          id: data.id,
-          name: data.name,
-          description: data.description || '',
-          category: data.category,
-          price: Number(data.price),
-          sizes: data.sizes,
-          image: data.image || undefined,
-          printer: data.printer || undefined,
-          isActive: data.is_active,
-          stockQuantity: data.stock_quantity,
-        };
-        setProducts([...products, newProduct]);
+    if (!isInitialized) {
+      console.log('useProducts - Initialisation du hook');
+      
+      // Charger les produits depuis le localStorage
+      const storedProducts = localStorage.getItem('restobar_products');
+      if (storedProducts) {
+        try {
+          const parsedProducts = JSON.parse(storedProducts);
+          if (Array.isArray(parsedProducts)) {
+            setProducts(parsedProducts);
+            console.log('useProducts - Produits chargés depuis localStorage:', parsedProducts.length);
+          }
+        } catch (error) {
+          console.error('useProducts - Erreur lors du chargement des produits:', error);
+          setProducts([]);
+        }
       }
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout du produit:', error);
-      throw error;
-    }
-  };
 
-  const updateProduct = async (id: string, product: Partial<Omit<Product, 'id'>>) => {
-    try {
-      const updateData: any = {};
-      if (product.name !== undefined) updateData.name = product.name;
-      if (product.description !== undefined) updateData.description = product.description || null;
-      if (product.category !== undefined) updateData.category = product.category;
-      if (product.price !== undefined) updateData.price = product.price;
-      if (product.sizes !== undefined) updateData.sizes = product.sizes;
-      if (product.image !== undefined) updateData.image = product.image || null;
-      if (product.printer !== undefined) updateData.printer = product.printer || null;
-      if (product.isActive !== undefined) updateData.is_active = product.isActive;
-      if (product.stockQuantity !== undefined) updateData.stock_quantity = product.stockQuantity;
-
-      const { error } = await supabase
-        .from('products')
-        .update(updateData)
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setProducts(products.map(p => p.id === id ? { ...p, ...product } : p));
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour du produit:', error);
-      throw error;
-    }
-  };
-
-  const deleteProduct = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setProducts(products.filter(p => p.id !== id));
-    } catch (error) {
-      console.error('Erreur lors de la suppression du produit:', error);
-      throw error;
-    }
-  };
-
-  const addCategory = async (category: Omit<Category, 'id'>) => {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .insert({
-          name: category.name,
-          description: category.description || null,
-          is_active: category.isActive,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        const newCategory: Category = {
-          id: data.id,
-          name: data.name,
-          description: data.description || '',
-          isActive: data.is_active,
-        };
-        setCategories([...categories, newCategory]);
+      // Charger les catégories depuis le localStorage
+      const storedCategories = localStorage.getItem('restobar_categories');
+      if (storedCategories) {
+        try {
+          const parsedCategories = JSON.parse(storedCategories);
+          if (Array.isArray(parsedCategories)) {
+            setCategories(parsedCategories);
+            console.log('useProducts - Catégories chargées depuis localStorage:', parsedCategories.length);
+          }
+        } catch (error) {
+          console.error('useProducts - Erreur lors du chargement des catégories:', error);
+          setCategories(mockCategories);
+        }
       }
+      
+      setIsInitialized(true);
+    }
+  }, [isInitialized]);
+
+  // Sauvegarder automatiquement les produits (avec protection contre les boucles)
+  useEffect(() => {
+    if (isInitialized && products.length >= 0) {
+      try {
+        const productsJson = JSON.stringify(products);
+        const currentStored = localStorage.getItem('restobar_products');
+        
+        // Ne sauvegarder que si les données ont changé
+        if (currentStored !== productsJson) {
+          localStorage.setItem('restobar_products', productsJson);
+          console.log('useProducts - Produits sauvegardés automatiquement:', products.length);
+        }
+      } catch (error) {
+        console.error('useProducts - Erreur lors de la sauvegarde des produits:', error);
+      }
+    }
+  }, [products, isInitialized]);
+
+  // Sauvegarder automatiquement les catégories (avec protection contre les boucles)
+  useEffect(() => {
+    if (isInitialized && categories.length > 0) {
+      try {
+        const categoriesJson = JSON.stringify(categories);
+        const currentStored = localStorage.getItem('restobar_categories');
+        
+        // Ne sauvegarder que si les données ont changé
+        if (currentStored !== categoriesJson) {
+          localStorage.setItem('restobar_categories', categoriesJson);
+          console.log('useProducts - Catégories sauvegardées automatiquement:', categories.length);
+        }
+      } catch (error) {
+        console.error('useProducts - Erreur lors de la sauvegarde des catégories:', error);
+      }
+    }
+  }, [categories, isInitialized]);
+
+  const addProduct = (productData: Omit<Product, 'id'>) => {
+    try {
+      const newProduct: Product = {
+        ...productData,
+        id: Date.now().toString(),
+      };
+      
+      setProducts(prev => {
+        const updatedProducts = [...prev, newProduct];
+        console.log('useProducts - Nouveau produit ajouté:', newProduct.name, 'Total:', updatedProducts.length);
+        return updatedProducts;
+      });
     } catch (error) {
-      console.error('Erreur lors de l\'ajout de la catégorie:', error);
-      throw error;
+      console.error('useProducts - Erreur lors de l\'ajout du produit:', error);
     }
   };
 
-  const updateCategory = async (id: string, category: Partial<Omit<Category, 'id'>>) => {
+  const updateProduct = (id: string, productData: Omit<Product, 'id'>) => {
     try {
-      const updateData: any = {};
-      if (category.name !== undefined) updateData.name = category.name;
-      if (category.description !== undefined) updateData.description = category.description || null;
-      if (category.isActive !== undefined) updateData.is_active = category.isActive;
-
-      const { error } = await supabase
-        .from('categories')
-        .update(updateData)
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setCategories(categories.map(c => c.id === id ? { ...c, ...category } : c));
+      setProducts(prev => {
+        const updatedProducts = prev.map(p => 
+          p.id === id ? { ...productData, id } : p
+        );
+        console.log('useProducts - Produit mis à jour:', productData.name);
+        return updatedProducts;
+      });
     } catch (error) {
-      console.error('Erreur lors de la mise à jour de la catégorie:', error);
-      throw error;
+      console.error('useProducts - Erreur lors de la mise à jour du produit:', error);
     }
   };
 
-  const deleteCategory = async (id: string) => {
+  const deleteProduct = (id: string) => {
     try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setCategories(categories.filter(c => c.id !== id));
+      setProducts(prev => {
+        const updatedProducts = prev.filter(p => p.id !== id);
+        console.log('useProducts - Produit supprimé, Total restant:', updatedProducts.length);
+        return updatedProducts;
+      });
     } catch (error) {
-      console.error('Erreur lors de la suppression de la catégorie:', error);
-      throw error;
+      console.error('useProducts - Erreur lors de la suppression du produit:', error);
+    }
+  };
+
+  const addCategory = (categoryData: Omit<Category, 'id'>) => {
+    try {
+      const newCategory: Category = {
+        ...categoryData,
+        id: Date.now().toString(),
+      };
+      
+      setCategories(prev => {
+        const updatedCategories = [...prev, newCategory];
+        console.log('useProducts - Nouvelle catégorie ajoutée:', newCategory.name);
+        return updatedCategories;
+      });
+    } catch (error) {
+      console.error('useProducts - Erreur lors de l\'ajout de la catégorie:', error);
+    }
+  };
+
+  const updateCategory = (id: string, categoryData: Omit<Category, 'id'>) => {
+    try {
+      setCategories(prev => {
+        const updatedCategories = prev.map(c => 
+          c.id === id ? { ...categoryData, id } : c
+        );
+        console.log('useProducts - Catégorie mise à jour:', categoryData.name);
+        return updatedCategories;
+      });
+    } catch (error) {
+      console.error('useProducts - Erreur lors de la mise à jour de la catégorie:', error);
+    }
+  };
+
+  const deleteCategory = (id: string) => {
+    try {
+      setCategories(prev => {
+        const updatedCategories = prev.filter(c => c.id !== id);
+        console.log('useProducts - Catégorie supprimée');
+        return updatedCategories;
+      });
+    } catch (error) {
+      console.error('useProducts - Erreur lors de la suppression de la catégorie:', error);
     }
   };
 
   const getActiveProducts = () => {
-    return products.filter(p => p.isActive);
+    const activeProducts = products.filter(p => p.isActive);
+    console.log('useProducts - getActiveProducts:', activeProducts.length, 'sur', products.length);
+    return activeProducts;
   };
 
   const getProductsByCategory = (categoryName: string) => {
-    return products.filter(p => p.category === categoryName && p.isActive);
+    const categoryProducts = products.filter(p => p.category === categoryName && p.isActive);
+    console.log('useProducts - getProductsByCategory:', categoryName, '=', categoryProducts.length, 'produits');
+    return categoryProducts;
   };
+
+  // Debug: Log des changements d'état
+  useEffect(() => {
+    console.log('useProducts - État actuel:', {
+      products: products.length,
+      categories: categories.length,
+      isInitialized
+    });
+  }, [products.length, categories.length, isInitialized]);
 
   return {
     products,
@@ -264,7 +223,6 @@ export const useProductProvider = () => {
     deleteCategory,
     getActiveProducts,
     getProductsByCategory,
-    isLoading,
   };
 };
 
