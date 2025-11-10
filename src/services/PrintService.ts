@@ -122,7 +122,21 @@ export class PrintService {
   }
 
   private findPrinter(type: 'cuisine' | 'bar' | 'caisse'): Printer | null {
-    return this.printers.find(p => p.type === type && p.isActive && p.isOnline) || null;
+    // Pour l'imprimante de caisse, essayer d'abord avec le filtre complet
+    let printer = this.printers.find(p => p.type === type && p.isActive && p.isOnline);
+
+    // Si aucune imprimante de caisse n'est trouvée, chercher n'importe quelle imprimante active de caisse
+    if (!printer && type === 'caisse') {
+      printer = this.printers.find(p => p.type === type && p.isActive) || null;
+
+      // Si toujours aucune, configurer une imprimante par défaut
+      if (!printer) {
+        this.configureDefaultCashPrinter();
+        printer = this.printers.find(p => p.type === type && p.isActive) || null;
+      }
+    }
+
+    return printer;
   }
 
   private generateTicketContent(order: Order, items: OrderItem[]): string {
@@ -291,11 +305,15 @@ export class PrintService {
 
   async printTicket(order: Order, items: OrderItem[]): Promise<boolean> {
     console.log('PrintService.printTicket - Début impression ticket');
-    
+
     const printer = this.findPrinter('caisse');
     if (!printer) {
-      throw new Error('Aucune imprimante de caisse disponible');
+      console.error('Aucune imprimante de caisse disponible');
+      console.log('Imprimantes configurées:', this.printers);
+      throw new Error('Aucune imprimante de caisse disponible. Veuillez configurer une imprimante dans les paramètres.');
     }
+
+    console.log('Imprimante de caisse trouvée:', printer.name);
 
     const orderCopy = { ...order };
     const itemsCopy = items.map(item => ({ ...item }));
@@ -317,11 +335,15 @@ export class PrintService {
 
   async printBill(order: Order, items: OrderItem[], customerName?: string): Promise<boolean> {
     console.log('PrintService.printBill - Début impression addition');
-    
+
     const printer = this.findPrinter('caisse');
     if (!printer) {
-      throw new Error('Aucune imprimante de caisse disponible');
+      console.error('Aucune imprimante de caisse disponible');
+      console.log('Imprimantes configurées:', this.printers);
+      throw new Error('Aucune imprimante de caisse disponible. Veuillez configurer une imprimante dans les paramètres.');
     }
+
+    console.log('Imprimante de caisse trouvée:', printer.name);
 
     const orderCopy = { ...order };
     const itemsCopy = items.map(item => ({ ...item }));

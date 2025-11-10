@@ -197,7 +197,7 @@ const POSSystem: React.FC = () => {
 
   const printTicket = async () => {
     if (cart.length === 0) return;
-    
+
     try {
       const order = createOrder();
       const cartItems = [...cart];
@@ -205,13 +205,14 @@ const POSSystem: React.FC = () => {
       alert('Ticket imprimé avec succès !');
     } catch (error) {
       console.error('Erreur d\'impression:', error);
-      alert('Erreur lors de l\'impression du ticket. Vérifiez l\'imprimante de caisse.');
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      alert(`Erreur lors de l'impression du ticket:\n${errorMessage}`);
     }
   };
 
   const printBill = async () => {
     if (cart.length === 0) return;
-    
+
     try {
       const order = createOrder();
       const cartItems = [...cart];
@@ -219,7 +220,8 @@ const POSSystem: React.FC = () => {
       alert('Addition imprimée avec succès !');
     } catch (error) {
       console.error('Erreur d\'impression:', error);
-      alert('Erreur lors de l\'impression de l\'addition. Vérifiez l\'imprimante de caisse.');
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      alert(`Erreur lors de l'impression de l'addition:\n${errorMessage}`);
     }
   };
 
