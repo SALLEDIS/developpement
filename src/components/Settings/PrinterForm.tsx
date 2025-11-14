@@ -43,25 +43,17 @@ const PrinterForm: React.FC<PrinterFormProps> = ({
   const [localPrinters, setLocalPrinters] = useState<LocalPrinter[]>([]);
 
   const printerModels = [
-    'Epson TM-T88VI',
-    'Epson TM-T20III',
-    'Star TSP143III',
-    'Star TSP650II',
-    'Citizen CT-S310II',
-    'Bixolon SRP-350III',
-    'HP LaserJet',
-    'Canon PIXMA',
-    'Brother HL',
-    'Custom',
+    'Imprimante système',
+    'Epson (ticket)',
+    'Star (ticket)',
+    'HP (bureau)',
+    'Canon (bureau)',
+    'Autre modèle',
   ];
 
-  // Simulation des imprimantes locales détectées
+  // Imprimante système simulée
   const mockLocalPrinters: LocalPrinter[] = [
-    { name: 'Epson TM-T88VI (USB001)', status: 'ready', isDefault: true, type: 'local', port: 'USB001' },
-    { name: 'HP LaserJet Pro M404n', status: 'ready', isDefault: false, type: 'local', port: 'USB002' },
-    { name: 'Canon PIXMA TS3350', status: 'offline', isDefault: false, type: 'local', port: 'USB003' },
-    { name: 'Brother HL-L2350DW', status: 'ready', isDefault: false, type: 'network', port: '192.168.1.105' },
-    { name: 'Star TSP143III (Bluetooth)', status: 'busy', isDefault: false, type: 'local', port: 'BT001' },
+    { name: 'Imprimante système', status: 'ready', isDefault: true, type: 'local', port: 'Système' }
   ];
 
   useEffect(() => {
@@ -100,10 +92,10 @@ const PrinterForm: React.FC<PrinterFormProps> = ({
 
   const handleSearchLocalPrinters = async () => {
     setIsSearchingPrinters(true);
-    
+
     // Simulation de la recherche d'imprimantes locales
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     setLocalPrinters(mockLocalPrinters);
     setIsSearchingPrinters(false);
   };
@@ -114,40 +106,35 @@ const PrinterForm: React.FC<PrinterFormProps> = ({
       name: prev.name || localPrinter.name,
       localPrinterName: localPrinter.name,
       isOnline: localPrinter.status === 'ready',
-      model: localPrinter.name.includes('Epson') ? 'Epson TM-T88VI' :
-             localPrinter.name.includes('HP') ? 'HP LaserJet' :
-             localPrinter.name.includes('Canon') ? 'Canon PIXMA' :
-             localPrinter.name.includes('Brother') ? 'Brother HL' :
-             localPrinter.name.includes('Star') ? 'Star TSP143III' : 'Custom',
+      model: 'Imprimante système',
     }));
   };
 
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
-    
+
     // Simulation du test de connexion
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     let isConnected = false;
-    
+
     if (formData.connectionType === 'network') {
       // Test de connexion réseau
       isConnected = Math.random() > 0.3;
     } else {
-      // Test d'imprimante locale
-      const selectedPrinter = localPrinters.find(p => p.name === formData.localPrinterName);
-      isConnected = selectedPrinter?.status === 'ready';
+      // Test d'imprimante locale - toujours connectée pour le système
+      isConnected = true;
     }
-    
+
     setFormData(prev => ({
       ...prev,
       isOnline: isConnected,
     }));
-    
+
     setIsTestingConnection(false);
-    
+
     if (isConnected) {
-      alert('Connexion réussie ! L\'imprimante répond correctement.');
+      alert('Connexion réussie ! L\'imprimante est prête.');
     } else {
       alert('Échec de la connexion. Vérifiez la configuration de l\'imprimante.');
     }
@@ -193,11 +180,11 @@ const PrinterForm: React.FC<PrinterFormProps> = ({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Guide simple */}
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <h3 className="font-semibold text-blue-900 mb-2">Configuration simplifiée</h3>
+        <h3 className="font-semibold text-blue-900 mb-2">Guide rapide</h3>
         <div className="text-sm text-blue-800 space-y-1">
-          <p>• Pour la caisse : sélectionnez l'imprimante locale (USB/Système)</p>
-          <p>• Pour la cuisine/bar : utilisez une imprimante réseau si disponible</p>
-          <p>• Testez la connexion avant de sauvegarder</p>
+          <p>• <strong>Caisse:</strong> Utilisez l'imprimante système de cet ordinateur</p>
+          <p>• <strong>Cuisine/Bar:</strong> Ajoutez une imprimante réseau si disponible</p>
+          <p>• Testez la connexion pour vérifier que tout fonctionne</p>
         </div>
       </div>
 
@@ -356,8 +343,8 @@ const PrinterForm: React.FC<PrinterFormProps> = ({
           ) : (
             <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-lg">
               <Printer className="h-10 w-10 mx-auto mb-2" />
-              <p className="text-sm font-medium">Aucune imprimante trouvée</p>
-              <p className="text-xs">Cliquez sur "Chercher" pour détecter</p>
+              <p className="text-sm font-medium">Cliquez sur "Chercher"</p>
+              <p className="text-xs">Pour détecter l'imprimante système</p>
             </div>
           )}
           

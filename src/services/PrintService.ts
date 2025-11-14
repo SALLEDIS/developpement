@@ -43,68 +43,44 @@ export class PrintService {
 
   private async detectSystemPrinters(): Promise<void> {
     try {
+      // Imprimante virtuelle par défaut pour l'impression via navigateur
       this.systemPrinters = [
         {
-          name: 'HP LaserJet Pro M404n',
+          name: 'Imprimante système',
           status: 'ready',
           isDefault: true,
           type: 'local',
-          driver: 'HP Universal Printing PCL 6'
-        },
-        {
-          name: 'Microsoft Print to PDF',
-          status: 'ready',
-          isDefault: false,
-          type: 'local',
-          driver: 'Microsoft Print To PDF'
-        },
-        {
-          name: 'Epson TM-T88VI (USB001)',
-          status: 'ready',
-          isDefault: false,
-          type: 'local',
-          port: 'USB001',
-          driver: 'Epson TM-T88VI Receipt'
-        },
-        {
-          name: 'Canon PIXMA TS3350',
-          status: 'offline',
-          isDefault: false,
-          type: 'local',
-          driver: 'Canon PIXMA TS3350 series'
+          driver: 'Navigateur'
         }
       ];
 
       this.defaultSystemPrinter = this.systemPrinters.find(p => p.isDefault) || null;
-      
-      console.log('Imprimantes système détectées:', this.systemPrinters);
-      console.log('Imprimante par défaut:', this.defaultSystemPrinter?.name);
+
+      console.log('Imprimante système disponible:', this.defaultSystemPrinter?.name);
     } catch (error) {
       console.error('Erreur lors de la détection des imprimantes système:', error);
     }
   }
 
   private configureDefaultCashPrinter(): void {
-    if (!this.defaultSystemPrinter) return;
-
     const existingCashPrinter = this.printers.find(p => p.type === 'caisse');
-    
-    if (!existingCashPrinter) {
+
+    if (!existingCashPrinter && this.defaultSystemPrinter) {
       const defaultCashPrinter: Printer = {
         id: 'default-cash-printer',
-        name: 'Caisse - ' + this.defaultSystemPrinter.name,
+        name: 'Imprimante de caisse',
         type: 'caisse',
-        ipAddress: this.defaultSystemPrinter.name,
+        ipAddress: '',
         port: 0,
-        model: this.defaultSystemPrinter.driver || 'Imprimante système',
+        model: 'Imprimante système',
         paperSize: '80mm',
         isActive: true,
-        isOnline: this.defaultSystemPrinter.status === 'ready',
+        isOnline: true,
         categories: []
       };
 
       this.printers.push(defaultCashPrinter);
-      console.log('Imprimante de caisse configurée automatiquement:', defaultCashPrinter.name);
+      console.log('Imprimante de caisse configurée automatiquement');
     }
   }
 
