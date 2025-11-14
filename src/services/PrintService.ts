@@ -423,20 +423,25 @@ export class PrintService {
         throw new Error('Imprimante introuvable');
       }
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Toujours s'assurer que l'imprimante système est disponible
+      if (!this.defaultSystemPrinter) {
+        await this.detectSystemPrinters();
+      }
 
       if (printer.port > 0) {
         console.log('Envoi vers imprimante réseau ' + printer.ipAddress + ':' + printer.port);
+        // Pour l'instant, on simule l'envoi réseau
+        console.log('Contenu à imprimer:');
+        console.log(printJob.content);
       } else {
-        console.log('Envoi vers imprimante système: ' + printer.ipAddress);
-        
-        if (printer.type === 'caisse' && this.defaultSystemPrinter) {
+        console.log('Envoi vers imprimante système');
+
+        if (this.defaultSystemPrinter) {
           await this.printToSystemPrinter(printJob.content, this.defaultSystemPrinter);
+        } else {
+          throw new Error('Imprimante système non disponible');
         }
       }
-
-      console.log('Contenu à imprimer:');
-      console.log(printJob.content);
 
       printJob.status = 'completed';
       console.log('PrintService.executePrintJob - Job terminé avec succès');
@@ -451,30 +456,78 @@ export class PrintService {
   private async printToSystemPrinter(content: string, systemPrinter: SystemPrinter): Promise<void> {
     try {
       console.log('PrintService.printToSystemPrinter - Début impression système');
-      
-      if ('print' in window) {
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-          printWindow.document.write('<html><head><title>Impression - ' + systemPrinter.name + '</title><style>body { font-family: \'Courier New\', monospace; font-size: 12px; line-height: 1.2; margin: 0; padding: 10px; white-space: pre-wrap; } @media print { body { margin: 0; padding: 0; } }</style></head><body>' + content + '</body></html>');
-          printWindow.document.close();
-          
-          setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-          }, 500);
-        }
-      } else {
-        const printElement = document.createElement('div');
-        printElement.style.display = 'none';
-        printElement.innerHTML = '<pre style="font-family: \'Courier New\', monospace; font-size: 12px;">' + content + '</pre>';
-        document.body.appendChild(printElement);
-        
-        window.print();
-        
-        setTimeout(() => {
-          document.body.removeChild(printElement);
-        }, 1000);
+
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      if (!printWindow) {
+        throw new Error('Impossible d\'ouvrir la fenêtre d\'impression. Vérifiez que les popups ne sont pas bloqués.');
       }
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Impression - ${systemPrinter.name}</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: 'Courier New', monospace;
+              font-size: 12px;
+              line-height: 1.4;
+              padding: 20px;
+              background: white;
+            }
+            .content {
+              white-space: pre-wrap;
+              word-wrap: break-word;
+            }
+            @media print {
+              body {
+                padding: 0;
+                margin: 0;
+              }
+              .no-print {
+                display: none;
+              }
+            }
+            .print-button {
+              position: fixed;
+              top: 10px;
+              right: 10px;
+              padding: 10px 20px;
+              background: #3b82f6;
+              color: white;
+              border: none;
+              border-radius: 5px;
+              cursor: pointer;
+              font-size: 14px;
+              z-index: 1000;
+            }
+            .print-button:hover {
+              background: #2563eb;
+            }
+          </style>
+        </head>
+        <body>
+          <button class="print-button no-print" onclick="window.print()">🖨️ Imprimer</button>
+          <div class="content">${content}</div>
+          <script>
+            // Imprimer automatiquement après un court délai
+            setTimeout(() => {
+              window.print();
+            }, 250);
+          </script>
+        </body>
+        </html>
+      `;
+
+      printWindow.document.open();
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
 
       console.log('Impression envoyée vers l\'imprimante système: ' + systemPrinter.name);
     } catch (error) {

@@ -18,22 +18,47 @@ const PrinterSettings: React.FC = () => {
   const printService = PrintService.getInstance();
 
   useEffect(() => {
-    // Initialiser le service avec les imprimantes et configurer l'imprimante par défaut
-    initializePrintService();
+    // Charger les imprimantes depuis localStorage ou créer l'imprimante par défaut
+    const savedPrinters = localStorage.getItem('restobar_printers');
+    if (savedPrinters) {
+      try {
+        const parsedPrinters = JSON.parse(savedPrinters);
+        setPrinters(parsedPrinters);
+        printService.setPrinters(parsedPrinters);
+      } catch (error) {
+        console.error('Erreur lors du chargement des imprimantes:', error);
+        initializeDefaultPrinter();
+      }
+    } else {
+      initializeDefaultPrinter();
+    }
   }, []);
 
-  const initializePrintService = async () => {
-    // Mettre à jour le service d'impression avec la liste des imprimantes
-    printService.setPrinters(printers);
-    
-    // Rafraîchir la détection des imprimantes système
-    await printService.refreshSystemPrinters();
-    
-    // Récupérer les imprimantes mises à jour (incluant l'imprimante de caisse auto-configurée)
-    const updatedPrinters = printService.getActivePrinters();
-    if (updatedPrinters.length > printers.length) {
-      setPrinters(updatedPrinters);
+  useEffect(() => {
+    // Sauvegarder les imprimantes dans localStorage
+    if (printers.length > 0) {
+      localStorage.setItem('restobar_printers', JSON.stringify(printers));
     }
+  }, [printers]);
+
+  const initializeDefaultPrinter = async () => {
+    await printService.refreshSystemPrinters();
+
+    const defaultPrinter: PrinterType = {
+      id: 'default-cash-printer',
+      name: 'Imprimante de caisse',
+      type: 'caisse',
+      ipAddress: '',
+      port: 0,
+      model: 'Imprimante système',
+      paperSize: '80mm',
+      isActive: true,
+      isOnline: true,
+      categories: []
+    };
+
+    setPrinters([defaultPrinter]);
+    printService.setPrinters([defaultPrinter]);
   };
 
   const handleRefreshSystemPrinters = async () => {
@@ -255,26 +280,20 @@ const PrinterSettings: React.FC = () => {
       </div>
 
       {/* Informations sur l'imprimante par défaut */}
-      {(() => {
-        const defaultPrinter = printService.getDefaultSystemPrinter();
-        return defaultPrinter && (
-          <Card className="border-green-200 bg-green-50">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-              <div>
-                <h3 className="font-semibold text-green-900">Imprimante système par défaut détectée</h3>
-                <p className="text-sm text-green-700">
-                  <span className="font-medium">{defaultPrinter.name}</span> - {defaultPrinter.driver}
-                  {defaultPrinter.status === 'ready' ? ' (Prête)' : ` (${defaultPrinter.status})`}
-                </p>
-                <p className="text-xs text-green-600 mt-1">
-                  Cette imprimante est automatiquement configurée pour la caisse
-                </p>
-              </div>
+      {printers.length > 0 && printers.some(p => p.type === 'caisse' && p.isActive) && (
+        <Card className="border-green-200 bg-green-50">
+          <div className="flex items-center gap-3">
+            <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-green-900">✓ Imprimante de caisse activée</h3>
+              <p className="text-sm text-green-700">
+                L'imprimante système est prête pour imprimer les tickets et additions
+              </p>
             </div>
-          </Card>
-        );
-      })()}
+            <Printer className="h-8 w-8 text-green-600" />
+          </div>
+        </Card>
+      )}
 
       {/* Statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -309,19 +328,21 @@ const PrinterSettings: React.FC = () => {
       </div>
 
       {/* Guide de démarrage rapide */}
-      <Card className="border-blue-200 bg-blue-50">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
-          <div>
-            <h3 className="font-semibold text-blue-900 mb-2">Démarrage rapide</h3>
-            <div className="text-sm text-blue-800 space-y-2">
-              <p><strong>1.</strong> Cliquez sur "Détecter" pour trouver automatiquement votre imprimante principale</p>
-              <p><strong>2.</strong> L'imprimante de caisse sera configurée automatiquement</p>
-              <p><strong>3.</strong> Ajoutez d'autres imprimantes pour la cuisine/bar si nécessaire</p>
+      {printers.length === 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-2">Première utilisation</h3>
+              <div className="text-sm text-blue-800 space-y-2">
+                <p><strong>1.</strong> Une imprimante de caisse par défaut sera créée automatiquement</p>
+                <p><strong>2.</strong> Elle utilisera l'imprimante système de votre ordinateur</p>
+                <p><strong>3.</strong> Vous pouvez ajouter d'autres imprimantes pour la cuisine/bar avec le bouton "Ajouter"</p>
+              </div>
             </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       {/* Liste des imprimantes */}
       <Card>
