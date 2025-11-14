@@ -495,18 +495,33 @@ export class PrintService {
               }
               body {
                 font-family: 'Courier New', monospace;
-                font-size: 12px;
-                line-height: 1.4;
+                font-size: 14px;
+                font-weight: 700;
+                line-height: 1.5;
                 padding: 10px;
                 background: white;
+                color: #000000;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
               }
               .content {
                 white-space: pre-wrap;
                 word-wrap: break-word;
+                color: #000000;
+                font-weight: 700;
               }
               @media print {
                 body {
                   padding: 0;
+                  margin: 0;
+                  font-weight: 700;
+                  color: #000000;
+                }
+                .content {
+                  font-weight: 700;
+                  color: #000000;
+                }
+                @page {
                   margin: 0;
                 }
               }
