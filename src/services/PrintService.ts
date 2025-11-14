@@ -460,86 +460,107 @@ export class PrintService {
   }
 
   private async printToSystemPrinter(content: string, systemPrinter: SystemPrinter): Promise<void> {
-    try {
-      console.log('PrintService.printToSystemPrinter - Début impression système');
+    return new Promise((resolve, reject) => {
+      try {
+        console.log('PrintService.printToSystemPrinter - Début impression système');
 
-      const printWindow = window.open('', '_blank', 'width=800,height=600');
-      if (!printWindow) {
-        throw new Error('Impossible d\'ouvrir la fenêtre d\'impression. Vérifiez que les popups ne sont pas bloqués.');
-      }
+        // Créer un iframe caché pour l'impression
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = 'none';
+        document.body.appendChild(iframe);
 
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Impression - ${systemPrinter.name}</title>
-          <style>
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            body {
-              font-family: 'Courier New', monospace;
-              font-size: 12px;
-              line-height: 1.4;
-              padding: 20px;
-              background: white;
-            }
-            .content {
-              white-space: pre-wrap;
-              word-wrap: break-word;
-            }
-            @media print {
-              body {
-                padding: 0;
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (!iframeDoc) {
+          document.body.removeChild(iframe);
+          reject(new Error('Impossible d\'accéder au document d\'impression'));
+          return;
+        }
+
+        const htmlContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>Impression - ${systemPrinter.name}</title>
+            <style>
+              * {
                 margin: 0;
+                padding: 0;
+                box-sizing: border-box;
               }
-              .no-print {
-                display: none;
+              body {
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                line-height: 1.4;
+                padding: 10px;
+                background: white;
               }
-            }
-            .print-button {
-              position: fixed;
-              top: 10px;
-              right: 10px;
-              padding: 10px 20px;
-              background: #3b82f6;
-              color: white;
-              border: none;
-              border-radius: 5px;
-              cursor: pointer;
-              font-size: 14px;
-              z-index: 1000;
-            }
-            .print-button:hover {
-              background: #2563eb;
-            }
-          </style>
-        </head>
-        <body>
-          <button class="print-button no-print" onclick="window.print()">🖨️ Imprimer</button>
-          <div class="content">${content}</div>
-          <script>
-            // Imprimer automatiquement après un court délai
+              .content {
+                white-space: pre-wrap;
+                word-wrap: break-word;
+              }
+              @media print {
+                body {
+                  padding: 0;
+                  margin: 0;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="content">${content}</div>
+          </body>
+          </html>
+        `;
+
+        iframeDoc.open();
+        iframeDoc.write(htmlContent);
+        iframeDoc.close();
+
+        // Attendre que le contenu soit chargé
+        iframe.onload = () => {
+          try {
+            // Attendre un court instant puis imprimer
             setTimeout(() => {
-              window.print();
+              const iframeWindow = iframe.contentWindow;
+              if (iframeWindow) {
+                iframeWindow.focus();
+                iframeWindow.print();
+
+                // Nettoyer après impression
+                setTimeout(() => {
+                  document.body.removeChild(iframe);
+                }, 1000);
+
+                console.log('Impression envoyée vers l\'imprimante système: ' + systemPrinter.name);
+                resolve();
+              } else {
+                document.body.removeChild(iframe);
+                reject(new Error('Fenêtre d\'impression non disponible'));
+              }
             }, 250);
-          </script>
-        </body>
-        </html>
-      `;
+          } catch (error) {
+            document.body.removeChild(iframe);
+            reject(error);
+          }
+        };
 
-      printWindow.document.open();
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
+        // Gérer les erreurs de chargement
+        iframe.onerror = () => {
+          document.body.removeChild(iframe);
+          reject(new Error('Erreur lors du chargement du contenu d\'impression'));
+        };
 
-      console.log('Impression envoyée vers l\'imprimante système: ' + systemPrinter.name);
-    } catch (error) {
-      console.error('Erreur lors de l\'impression système:', error);
-      throw error;
-    }
+      } catch (error) {
+        console.error('Erreur lors de l\'impression système:', error);
+        reject(error);
+      }
+    });
   }
 
   async testPrint(printerId: string): Promise<void> {
