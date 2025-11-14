@@ -279,7 +279,7 @@ export class PrintService {
     }
   }
 
-  async printTicket(order: Order, items: OrderItem[]): Promise<boolean> {
+  async printTicket(order: Order, items: OrderItem[]): Promise<void> {
     console.log('PrintService.printTicket - Début impression ticket');
 
     const printer = this.findPrinter('caisse');
@@ -304,12 +304,11 @@ export class PrintService {
       status: 'pending',
     };
 
-    const result = await this.executePrintJob(printJob);
-    console.log('PrintService.printTicket - Fin impression ticket, résultat:', result);
-    return result;
+    await this.executePrintJob(printJob);
+    console.log('PrintService.printTicket - Impression ticket terminée avec succès');
   }
 
-  async printBill(order: Order, items: OrderItem[], customerName?: string): Promise<boolean> {
+  async printBill(order: Order, items: OrderItem[], customerName?: string): Promise<void> {
     console.log('PrintService.printBill - Début impression addition');
 
     const printer = this.findPrinter('caisse');
@@ -334,44 +333,50 @@ export class PrintService {
       status: 'pending',
     };
 
-    const result = await this.executePrintJob(printJob);
-    console.log('PrintService.printBill - Fin impression addition, résultat:', result);
-    return result;
+    await this.executePrintJob(printJob);
+    console.log('PrintService.printBill - Impression addition terminée avec succès');
   }
 
-  async printOrder(items: OrderItem[], categories: string[], orderType: string, tableId?: string): Promise<boolean> {
+  async printOrder(items: OrderItem[], categories: string[], orderType: string, tableId?: string): Promise<void> {
     console.log('PrintService.printOrder - Début impression commande');
-    
-    const results: boolean[] = [];
+
     const itemsCopy = items.map(item => ({ ...item }));
     const itemsByPrinter = this.groupItemsByPrinter(itemsCopy, categories);
+
+    const errors: string[] = [];
 
     for (const [printerType, printerItems] of itemsByPrinter.entries()) {
       const printer = this.findPrinter(printerType as 'cuisine' | 'bar' | 'caisse');
       if (printer && printerItems.length > 0) {
-        const content = this.generateOrderContent(
-          printerItems, 
-          this.getOrderTypeText(orderType), 
-          tableId
-        );
-        
-        const printJob: PrintJob = {
-          id: Date.now().toString(),
-          type: 'order',
-          printerId: printer.id,
-          content,
-          timestamp: new Date(),
-          status: 'pending',
-        };
+        try {
+          const content = this.generateOrderContent(
+            printerItems,
+            this.getOrderTypeText(orderType),
+            tableId
+          );
 
-        const result = await this.executePrintJob(printJob);
-        results.push(result);
+          const printJob: PrintJob = {
+            id: Date.now().toString(),
+            type: 'order',
+            printerId: printer.id,
+            content,
+            timestamp: new Date(),
+            status: 'pending',
+          };
+
+          await this.executePrintJob(printJob);
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Erreur inconnue';
+          errors.push(`${printerType}: ${errorMsg}`);
+        }
       }
     }
 
-    const finalResult = results.every(result => result);
-    console.log('PrintService.printOrder - Fin impression commande, résultat:', finalResult);
-    return finalResult;
+    if (errors.length > 0) {
+      throw new Error(`Erreurs d'impression:\n${errors.join('\n')}`);
+    }
+
+    console.log('PrintService.printOrder - Impression commande terminée avec succès');
   }
 
   private groupItemsByPrinter(items: OrderItem[], categories: string[]): Map<string, OrderItem[]> {
@@ -411,23 +416,24 @@ export class PrintService {
     return 'Plats';
   }
 
-  private async executePrintJob(printJob: PrintJob): Promise<boolean> {
+  private async executePrintJob(printJob: PrintJob): Promise<void> {
+    console.log('PrintService.executePrintJob - Début exécution job:', printJob.type);
+
+    printJob.status = 'printing';
+    this.printQueue.push(printJob);
+
+    const printer = this.printers.find(p => p.id === printJob.printerId);
+    if (!printer) {
+      printJob.status = 'failed';
+      throw new Error('Imprimante introuvable');
+    }
+
+    // Toujours s'assurer que l'imprimante système est disponible
+    if (!this.defaultSystemPrinter) {
+      await this.detectSystemPrinters();
+    }
+
     try {
-      console.log('PrintService.executePrintJob - Début exécution job:', printJob.type);
-      
-      printJob.status = 'printing';
-      this.printQueue.push(printJob);
-
-      const printer = this.printers.find(p => p.id === printJob.printerId);
-      if (!printer) {
-        throw new Error('Imprimante introuvable');
-      }
-
-      // Toujours s'assurer que l'imprimante système est disponible
-      if (!this.defaultSystemPrinter) {
-        await this.detectSystemPrinters();
-      }
-
       if (printer.port > 0) {
         console.log('Envoi vers imprimante réseau ' + printer.ipAddress + ':' + printer.port);
         // Pour l'instant, on simule l'envoi réseau
@@ -445,11 +451,11 @@ export class PrintService {
 
       printJob.status = 'completed';
       console.log('PrintService.executePrintJob - Job terminé avec succès');
-      return true;
     } catch (error) {
       printJob.status = 'failed';
       console.error('Erreur d\'impression:', error);
-      return false;
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      throw new Error(errorMessage);
     }
   }
 
@@ -536,7 +542,7 @@ export class PrintService {
     }
   }
 
-  async testPrint(printerId: string): Promise<boolean> {
+  async testPrint(printerId: string): Promise<void> {
     const printer = this.printers.find(p => p.id === printerId);
     if (!printer) {
       throw new Error('Imprimante introuvable');
@@ -553,7 +559,7 @@ export class PrintService {
       status: 'pending',
     };
 
-    return this.executePrintJob(printJob);
+    await this.executePrintJob(printJob);
   }
 
   getPrintQueue(): PrintJob[] {

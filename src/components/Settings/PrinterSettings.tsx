@@ -165,14 +165,12 @@ const PrinterSettings: React.FC = () => {
 
   const handleTestPrint = async (printer: PrinterType) => {
     try {
-      const success = await printService.testPrint(printer.id);
-      if (success) {
-        alert(`Test d'impression réussi sur ${printer.name}`);
-      } else {
-        alert(`Échec du test d'impression sur ${printer.name}`);
-      }
+      await printService.testPrint(printer.id);
+      alert(`✓ Test d'impression réussi!\n\nUne fenêtre d'aperçu devrait s'ouvrir.\nVérifiez que votre imprimante ${printer.name} est prête.`);
     } catch (error) {
-      alert(`Erreur lors du test d'impression: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      alert(`✗ Échec du test d'impression\n\nImprimante: ${printer.name}\nErreur: ${errorMessage}\n\nVérifiez que les popups ne sont pas bloqués dans votre navigateur.`);
+      console.error('Erreur test impression:', error);
     }
   };
 
