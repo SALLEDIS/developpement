@@ -495,33 +495,41 @@ export class PrintService {
               }
               body {
                 font-family: 'Courier New', monospace;
-                font-size: 14px;
+                font-size: 13px;
                 font-weight: 700;
-                line-height: 1.5;
-                padding: 10px;
+                line-height: 1.4;
                 background: white;
                 color: #000000;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+                width: 80mm;
+                max-width: 80mm;
+                margin: 0 auto;
+                padding: 5mm;
               }
               .content {
                 white-space: pre-wrap;
                 word-wrap: break-word;
                 color: #000000;
                 font-weight: 700;
+                width: 100%;
+                text-align: left;
               }
               @media print {
                 body {
-                  padding: 0;
+                  padding: 5mm;
                   margin: 0;
                   font-weight: 700;
                   color: #000000;
+                  width: 80mm;
+                  max-width: 80mm;
                 }
                 .content {
                   font-weight: 700;
                   color: #000000;
                 }
                 @page {
+                  size: 80mm auto;
                   margin: 0;
                 }
               }
