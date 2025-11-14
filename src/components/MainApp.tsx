@@ -5,7 +5,7 @@ import Dashboard from './Dashboard/Dashboard';
 import TableGrid from './Tables/TableGrid';
 import ProductsManagement from './Products/ProductsManagement';
 import OrdersManagement from './Orders/OrdersManagement';
-import POSSystem from './POS/POSSystem';
+import ModernPOS from './POS/ModernPOS';
 import Settings from './Settings/Settings';
 import WaiterApp from './Waiter/WaiterApp';
 import ReportsManagement from './Reports/ReportsManagement';
@@ -38,7 +38,7 @@ const MainApp: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'pos':
-        return <POSSystem />;
+        return <ModernPOS />;
       case 'waiter':
         return <WaiterApp />;
       case 'dashboard':
@@ -47,8 +47,8 @@ const MainApp: React.FC = () => {
         return <ProductsManagement />;
       case 'tables':
         return (
-          <TableGrid 
-            tables={tables} 
+          <TableGrid
+            tables={tables}
             onTableClick={(table) => console.log('Table cliquée:', table)}
           />
         );
@@ -80,7 +80,7 @@ const MainApp: React.FC = () => {
       case 'settings':
         return <Settings />;
       default:
-        return <POSSystem />;
+        return <ModernPOS />;
     }
   };
 
