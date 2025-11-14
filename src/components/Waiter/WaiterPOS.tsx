@@ -8,6 +8,7 @@ import { useOrders } from '../../hooks/useOrders';
 import { useTables } from '../../hooks/useTables';
 import { useAuth } from '../../hooks/useAuth';
 import { OrderItem, Order } from '../../types';
+import { PrintService } from '../../services/PrintService';
 
 interface WaiterPOSProps {
   selectedTable: any;
@@ -96,62 +97,95 @@ const WaiterPOS: React.FC<WaiterPOSProps> = ({
   const tax = subtotal * 0.1;
   const total = subtotal + tax;
 
-  const sendOrder = () => {
+  const sendOrder = async () => {
     if (cart.length === 0) return;
 
-    if (isAddingToExisting && existingOrder) {
-      // Ajouter à la commande existante
-      const updatedItems = [...existingOrder.items, ...cart];
-      const newSubtotal = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      const newTax = newSubtotal * 0.1;
-      const newTotal = newSubtotal + newTax;
+    try {
+      const printService = PrintService.getInstance();
 
-      const updatedOrder: Partial<Order> = {
-        items: updatedItems,
-        subtotal: newSubtotal,
-        tax: newTax,
-        total: newTotal,
-        updatedAt: new Date(),
-        notes: notes || existingOrder.notes,
-      };
+      if (isAddingToExisting && existingOrder) {
+        // Ajouter à la commande existante
+        const updatedItems = [...existingOrder.items, ...cart];
+        const newSubtotal = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const newTax = newSubtotal * 0.1;
+        const newTotal = newSubtotal + newTax;
 
-      updateOrder(existingOrder.id, updatedOrder);
-      
-      alert(
-        `Articles ajoutés avec succès !\n\n` +
-        `Commande: ${existingOrder.orderNumber}\n` +
-        `Nouveaux articles: ${cart.length}\n` +
-        `Nouveau total: ${newTotal.toLocaleString('fr-FR')} CFA`
-      );
-    } else {
-      // Créer une nouvelle commande
-      const order: Omit<Order, 'id'> = {
-        orderNumber: `CMD-${Date.now().toString().slice(-6)}`,
-        type: selectedTable ? 'dine-in' : orderType,
-        status: 'pending',
-        tableId: selectedTable?.id,
-        waiterId: user?.id,
-        items: [...cart],
-        subtotal,
-        tax,
-        total,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        notes,
-      };
+        const updatedOrder: Partial<Order> = {
+          items: updatedItems,
+          subtotal: newSubtotal,
+          tax: newTax,
+          total: newTotal,
+          updatedAt: new Date(),
+          notes: notes || existingOrder.notes,
+        };
 
-      addOrder(order);
+        updateOrder(existingOrder.id, updatedOrder);
 
-      if (selectedTable) {
-        updateTableStatus(selectedTable.id, 'occupied');
+        // Imprimer les nouveaux articles vers les imprimantes appropriées
+        try {
+          await printService.printOrder(
+            cart,
+            categories.map(c => c.name),
+            existingOrder.type,
+            existingOrder.tableId
+          );
+        } catch (printError) {
+          console.error('Erreur impression:', printError);
+          // Continuer même si l'impression échoue
+        }
+
+        alert(
+          `Articles ajoutés avec succès !\n\n` +
+          `Commande: ${existingOrder.orderNumber}\n` +
+          `Nouveaux articles: ${cart.length}\n` +
+          `Nouveau total: ${newTotal.toLocaleString('fr-FR')} CFA`
+        );
+      } else {
+        // Créer une nouvelle commande
+        const order: Omit<Order, 'id'> = {
+          orderNumber: `CMD-${Date.now().toString().slice(-6)}`,
+          type: selectedTable ? 'dine-in' : orderType,
+          status: 'pending',
+          tableId: selectedTable?.id,
+          waiterId: user?.id,
+          items: [...cart],
+          subtotal,
+          tax,
+          total,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          notes,
+        };
+
+        addOrder(order);
+
+        if (selectedTable) {
+          updateTableStatus(selectedTable.id, 'occupied');
+        }
+
+        // Imprimer la commande vers les imprimantes appropriées (cuisine/bar)
+        try {
+          await printService.printOrder(
+            cart,
+            categories.map(c => c.name),
+            order.type,
+            order.tableId
+          );
+        } catch (printError) {
+          console.error('Erreur impression:', printError);
+          // Continuer même si l'impression échoue
+        }
+
+        alert(`Commande envoyée avec succès !\nTotal: ${total.toLocaleString('fr-FR')} CFA`);
       }
 
-      alert(`Commande envoyée avec succès !\nTotal: ${total.toLocaleString('fr-FR')} CFA`);
+      setCart([]);
+      setNotes('');
+      onBack();
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de la commande:', error);
+      alert('Erreur lors de l\'envoi de la commande. Veuillez réessayer.');
     }
-
-    setCart([]);
-    setNotes('');
-    onBack();
   };
 
   return (
