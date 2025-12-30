@@ -380,11 +380,10 @@ const POSSystem: React.FC = () => {
                         {product.name}
                       </div>
                       <div className="text-center w-full">
-                        <div className="text-xs text-gray-500 mb-1.5">{size.name}</div>
-                        <div className="text-xl font-bold text-blue-600 group-hover:text-blue-700">
-                          {size.price.toLocaleString('fr-FR')}
+                        <div className="text-xs text-gray-500 mb-1">{size.name}</div>
+                        <div className="text-sm font-semibold text-blue-600 group-hover:text-blue-700">
+                          {size.price.toLocaleString('fr-FR')} CFA
                         </div>
-                        <div className="text-xs text-gray-500 mt-0.5">CFA</div>
                       </div>
                     </button>
                   ))
@@ -398,10 +397,9 @@ const POSSystem: React.FC = () => {
                       {product.name}
                     </div>
                     <div className="text-center w-full">
-                      <div className="text-xl font-bold text-blue-600 group-hover:text-blue-700">
-                        {product.price.toLocaleString('fr-FR')}
+                      <div className="text-sm font-semibold text-blue-600 group-hover:text-blue-700">
+                        {product.price.toLocaleString('fr-FR')} CFA
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5">CFA</div>
                     </div>
                   </button>
                 )
@@ -411,7 +409,7 @@ const POSSystem: React.FC = () => {
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-[420px] bg-white border-l border-gray-200 flex flex-col">
+        <div className="w-[500px] bg-white border-l border-gray-200 flex flex-col">
           {/* Header */}
           <div className="bg-blue-600 px-5 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -531,36 +529,22 @@ const POSSystem: React.FC = () => {
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={clearCart}
                 disabled={cart.length === 0}
-                className="px-3 py-3 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-red-50 hover:border-red-300 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <X className="h-5 w-5" />
-                <span className="text-xs font-medium">Annuler</span>
-              </button>
-              <button
-                disabled={cart.length === 0}
-                className="px-3 py-3 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Tag className="h-5 w-5" />
-                <span className="text-xs font-medium">Remise</span>
-              </button>
-              <button
-                disabled={cart.length === 0}
-                className="px-3 py-3 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <MessageSquare className="h-5 w-5" />
-                <span className="text-xs font-medium">Note</span>
+                <Trash2 className="h-5 w-5" />
+                <span className="text-sm font-medium">Vider panier</span>
               </button>
               <button
                 onClick={sendOrderToPrinters}
                 disabled={cart.length === 0 || !selectedTableId}
-                className="px-3 py-3 bg-orange-500 border border-orange-600 text-white rounded-lg hover:bg-orange-600 transition-all flex flex-col items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                className="px-4 py-3 bg-orange-500 border border-orange-600 text-white rounded-lg hover:bg-orange-600 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
               >
                 <Printer className="h-5 w-5" />
-                <span className="text-xs font-medium">Envoyer</span>
+                <span className="text-sm font-medium">Envoyer</span>
               </button>
             </div>
 
@@ -585,7 +569,15 @@ const POSSystem: React.FC = () => {
             </div>
 
             {/* Bottom Actions */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={printBill}
+                disabled={cart.length === 0 && !selectedOrderForPayment}
+                className="px-4 py-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Receipt className="h-5 w-5" />
+                <span className="text-sm font-medium">Addition</span>
+              </button>
               <button
                 onClick={openCashDrawer}
                 className="px-4 py-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
