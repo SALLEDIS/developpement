@@ -5,6 +5,7 @@ import PrinterSettings from './PrinterSettings';
 import UserManagement from './UserManagement';
 import RestaurantSettings from './RestaurantSettings';
 import CashManagement from './CashManagement';
+import PaymentSettings from './PaymentSettings';
 
 const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('printers');
@@ -30,12 +31,7 @@ const Settings: React.FC = () => {
       case 'cash':
         return <CashManagement />;
       case 'payments':
-        return (
-          <Card>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuration des paiements</h3>
-            <p className="text-gray-600">Configuration des méthodes de paiement à venir...</p>
-          </Card>
-        );
+        return <PaymentSettings />;
       case 'notifications':
         return (
           <Card>

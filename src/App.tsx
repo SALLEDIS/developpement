@@ -7,6 +7,7 @@ import { useUserProvider, UserContext } from './hooks/useUsers';
 import { useExpenseProvider, ExpenseContext } from './hooks/useExpenses';
 import { useSettingsProvider, SettingsContext } from './hooks/useSettings';
 import { useCashSessionProvider, CashSessionContext } from './hooks/useCashSession';
+import { usePaymentMethodsProvider, PaymentMethodsContext } from './hooks/usePaymentMethods';
 import { useAuth } from './hooks/useAuth';
 import LoginForm from './components/Auth/LoginForm';
 import MainApp from './components/MainApp';
@@ -51,6 +52,11 @@ const CashSessionProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return <CashSessionContext.Provider value={cashSession}>{children}</CashSessionContext.Provider>;
 };
 
+const PaymentMethodsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const paymentMethods = usePaymentMethodsProvider();
+  return <PaymentMethodsContext.Provider value={paymentMethods}>{children}</PaymentMethodsContext.Provider>;
+};
+
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
 
@@ -69,19 +75,21 @@ function App() {
   return (
     <AuthProvider>
       <SettingsProvider>
-        <OrderProvider>
-          <ExpenseProvider>
-            <CashSessionProvider>
-              <UserProvider>
-                <ProductProvider>
-                  <TableProvider>
-                    <AppContent />
-                  </TableProvider>
-                </ProductProvider>
-              </UserProvider>
-            </CashSessionProvider>
-          </ExpenseProvider>
-        </OrderProvider>
+        <PaymentMethodsProvider>
+          <OrderProvider>
+            <ExpenseProvider>
+              <CashSessionProvider>
+                <UserProvider>
+                  <ProductProvider>
+                    <TableProvider>
+                      <AppContent />
+                    </TableProvider>
+                  </ProductProvider>
+                </UserProvider>
+              </CashSessionProvider>
+            </ExpenseProvider>
+          </OrderProvider>
+        </PaymentMethodsProvider>
       </SettingsProvider>
     </AuthProvider>
   );
