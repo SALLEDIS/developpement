@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, Clock, CheckCircle, Utensils, Edit } from 'lucide-react';
+import { Plus, Users, Clock, CheckCircle, Utensils, Edit, Smartphone } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import { useTables } from '../../hooks/useTables';
@@ -7,6 +7,7 @@ import { useOrders } from '../../hooks/useOrders';
 import { useProducts } from '../../hooks/useProducts';
 import { useAuth } from '../../hooks/useAuth';
 import WaiterPOS from './WaiterPOS';
+import WaiterMobileApp from './WaiterMobileApp';
 
 const WaiterApp: React.FC = () => {
   const { tables, getAvailableTables } = useTables();
@@ -16,6 +17,7 @@ const WaiterApp: React.FC = () => {
   const [selectedTable, setSelectedTable] = useState<any>(null);
   const [showPOS, setShowPOS] = useState(false);
   const [isAddingToExisting, setIsAddingToExisting] = useState(false);
+  const [mobileMode, setMobileMode] = useState(false);
 
   const availableTables = getAvailableTables();
   const occupiedTables = tables.filter(t => t.status === 'occupied');
@@ -74,6 +76,20 @@ const WaiterApp: React.FC = () => {
     setShowPOS(true);
   };
 
+  if (mobileMode) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white">
+        <WaiterMobileApp />
+        <button
+          onClick={() => setMobileMode(false)}
+          className="fixed top-4 right-4 px-4 py-2 bg-gray-800 text-white rounded-lg text-sm z-50"
+        >
+          Mode Desktop
+        </button>
+      </div>
+    );
+  }
+
   if (showPOS) {
     return (
       <WaiterPOS
@@ -91,6 +107,24 @@ const WaiterApp: React.FC = () => {
 
   return (
     <div className="space-y-4 lg:space-y-6">
+      {/* Bouton mode mobile */}
+      <Card className="border-blue-200 bg-blue-50">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <h3 className="font-semibold text-blue-900 mb-1">Mode Mobile Serveur</h3>
+            <p className="text-sm text-blue-700">Interface optimisée pour smartphone - Prise de commande rapide</p>
+          </div>
+          <Button
+            onClick={() => setMobileMode(true)}
+            icon={Smartphone}
+            variant="primary"
+            className="flex-shrink-0"
+          >
+            Activer
+          </Button>
+        </div>
+      </Card>
+
       {/* En-tête avec statistiques */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card padding="sm" className="text-center">

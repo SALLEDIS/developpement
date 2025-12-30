@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#2563eb">
+  <title>RestoBar - Mode Serveur</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 400px;
+      width: 100%;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 40px 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .icon {
+      width: 80px;
+      height: 80px;
+      background: #dbeafe;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .icon svg {
+      width: 40px;
+      height: 40px;
+      color: #2563eb;
+    }
+    h1 {
+      text-align: center;
+      color: #111827;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    p {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 30px;
+    }
+    .button {
+      width: 100%;
+      padding: 18px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .button:active {
+      transform: scale(0.98);
+      background: #1d4ed8;
+    }
+    .info {
+      margin-top: 30px;
+      padding: 20px;
+      background: #dbeafe;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .info p {
+      color: #1e40af;
+      font-size: 14px;
+      margin: 0;
+    }
+    .info strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      color: white;
+      font-size: 14px;
+    }
+    .steps {
+      margin-top: 20px;
+      text-align: left;
+    }
+    .step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 15px;
+      align-items: start;
+    }
+    .step-number {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      background: #2563eb;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .step-text {
+      flex: 1;
+      color: #374151;
+      padding-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+        </svg>
+      </div>
+
+      <h1>Mode Serveur Mobile</h1>
+      <p>Interface optimisée pour smartphone</p>
+
+      <a href="/" class="button">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+        </svg>
+        Commencer
+      </a>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-text">Connectez-vous avec votre code serveur</div>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-text">Activez le "Mode Mobile Serveur"</div>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-text">Sélectionnez une table et prenez la commande</div>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-text">Envoyez à la cuisine/bar - Le paiement se fait au comptoir</div>
+        </div>
+      </div>
+
+      <div class="info">
+        <p>
+          <strong>Important</strong>
+          Cette interface est optimisée pour smartphone. Les commandes sont envoyées directement à la cuisine/bar. Le paiement et l'addition se gèrent au comptoir.
+        </p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>RestoBar - Gestion de restaurant</p>
+    </div>
+  </div>
+</body>
+</html>
