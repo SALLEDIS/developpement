@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Printer, Wifi, WifiOff, Settings as SettingsIcon, Monitor, Usb, TestTube, RefreshCw, CheckCircle, RotateCcw, AlertCircle } from 'lucide-react';
+import { Printer, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
-import Input from '../ui/Input';
 import Modal from '../ui/Modal';
 import PrinterForm from './PrinterForm';
 import PrintService from '../../services/PrintService';
@@ -12,13 +11,15 @@ const PrinterSettings: React.FC = () => {
   const [printers, setPrinters] = useState<PrinterType[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPrinter, setEditingPrinter] = useState<PrinterType | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   const printService = PrintService.getInstance();
 
   useEffect(() => {
-    // Charger les imprimantes depuis localStorage ou créer l'imprimante par défaut
+    loadPrinters();
+  }, []);
+
+  const loadPrinters = () => {
     const savedPrinters = localStorage.getItem('restobar_printers');
     if (savedPrinters) {
       try {
@@ -27,103 +28,53 @@ const PrinterSettings: React.FC = () => {
         printService.setPrinters(parsedPrinters);
       } catch (error) {
         console.error('Erreur lors du chargement des imprimantes:', error);
-        initializeDefaultPrinter();
+        setPrinters([]);
       }
-    } else {
-      initializeDefaultPrinter();
     }
-  }, []);
+  };
 
   useEffect(() => {
-    // Sauvegarder les imprimantes dans localStorage
     if (printers.length > 0) {
       localStorage.setItem('restobar_printers', JSON.stringify(printers));
     }
   }, [printers]);
 
-  const initializeDefaultPrinter = async () => {
-    await printService.refreshSystemPrinters();
-
-    const defaultPrinter: PrinterType = {
-      id: 'default-cash-printer',
-      name: 'Imprimante de caisse',
-      type: 'caisse',
-      ipAddress: '',
-      port: 0,
-      model: 'Imprimante système',
-      paperSize: '80mm',
-      isActive: true,
-      isOnline: true,
-      categories: []
-    };
-
-    setPrinters([defaultPrinter]);
-    printService.setPrinters([defaultPrinter]);
-  };
-
-  const handleRefreshSystemPrinters = async () => {
-    setIsRefreshing(true);
+  const handleAutoSetup = async () => {
+    setIsInitializing(true);
     try {
       await printService.refreshSystemPrinters();
-      
-      // Récupérer les imprimantes système détectées
-      const systemPrinters = printService.getSystemPrinters();
       const defaultPrinter = printService.getDefaultSystemPrinter();
-      
-      console.log('Imprimantes système détectées:', systemPrinters);
-      console.log('Imprimante par défaut:', defaultPrinter?.name);
-      
-      // Mettre à jour la liste des imprimantes avec les nouvelles détections
-      const updatedPrinters = [...printers];
-      
-      // Vérifier si l'imprimante de caisse par défaut a été créée/mise à jour
-      const cashPrinter = updatedPrinters.find(p => p.type === 'caisse');
-      if (defaultPrinter && (!cashPrinter || cashPrinter.id === 'default-cash-printer')) {
-        const defaultCashPrinter: PrinterType = {
-          id: 'default-cash-printer',
-          name: `Caisse - ${defaultPrinter.name}`,
+
+      if (defaultPrinter) {
+        const cashPrinter: PrinterType = {
+          id: 'cash-printer',
+          name: 'Imprimante Caisse',
           type: 'caisse',
           ipAddress: defaultPrinter.name,
           port: 0,
-          model: defaultPrinter.driver || 'Imprimante système',
+          model: 'Système',
           paperSize: '80mm',
           isActive: true,
-          isOnline: defaultPrinter.status === 'ready',
-          categories: []
+          isOnline: true,
+          categories: [],
+          autoprint: true
         };
-        
-        if (cashPrinter) {
-          // Mettre à jour l'imprimante existante
-          const index = updatedPrinters.findIndex(p => p.id === cashPrinter.id);
-          updatedPrinters[index] = defaultCashPrinter;
-        } else {
-          // Ajouter la nouvelle imprimante
-          updatedPrinters.push(defaultCashPrinter);
-        }
+
+        setPrinters([cashPrinter]);
+        printService.setPrinters([cashPrinter]);
+        alert('✓ Configuration automatique terminée!\nImprimante de caisse prête.');
+      } else {
+        alert('Aucune imprimante système détectée.\nVeuillez en ajouter une manuellement.');
       }
-      
-      setPrinters(updatedPrinters);
-      printService.setPrinters(updatedPrinters);
-      
-      alert(`Détection terminée!\nImprimantes trouvées: ${systemPrinters.length}\nImprimante par défaut: ${defaultPrinter?.name || 'Aucune'}`);
     } catch (error) {
-      console.error('Erreur lors de la détection:', error);
-      alert('Erreur lors de la détection des imprimantes système');
+      console.error('Erreur lors de la configuration:', error);
+      alert('Erreur lors de la détection automatique');
     } finally {
-      setIsRefreshing(false);
+      setIsInitializing(false);
     }
   };
 
-  const handleResetPrinters = () => {
-    if (confirm('Êtes-vous sûr de vouloir réinitialiser toutes les imprimantes ?\nCette action est irréversible.')) {
-      setPrinters([]);
-      printService.setPrinters([]);
-      setShowResetConfirm(false);
-      alert('Configuration des imprimantes réinitialisée avec succès.');
-    }
-  };
-
-  const handleCreatePrinter = () => {
+  const handleAddPrinter = () => {
     setEditingPrinter(null);
     setIsModalOpen(true);
   };
@@ -135,10 +86,8 @@ const PrinterSettings: React.FC = () => {
 
   const handleSavePrinter = (printerData: Omit<PrinterType, 'id'>) => {
     if (editingPrinter) {
-      const updatedPrinters = printers.map(p => 
-        p.id === editingPrinter.id 
-          ? { ...printerData, id: editingPrinter.id }
-          : p
+      const updatedPrinters = printers.map(p =>
+        p.id === editingPrinter.id ? { ...printerData, id: editingPrinter.id } : p
       );
       setPrinters(updatedPrinters);
       printService.setPrinters(updatedPrinters);
@@ -156,7 +105,7 @@ const PrinterSettings: React.FC = () => {
   };
 
   const handleDeletePrinter = (printerId: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette imprimante ?')) {
+    if (confirm('Supprimer cette imprimante ?')) {
       const updatedPrinters = printers.filter(p => p.id !== printerId);
       setPrinters(updatedPrinters);
       printService.setPrinters(updatedPrinters);
@@ -166,368 +115,187 @@ const PrinterSettings: React.FC = () => {
   const handleTestPrint = async (printer: PrinterType) => {
     try {
       await printService.testPrint(printer.id);
-      alert(`✓ Test d'impression réussi!\n\nUne fenêtre d'aperçu devrait s'ouvrir.\nVérifiez que votre imprimante ${printer.name} est prête.`);
+      alert('✓ Test réussi!');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-      alert(`✗ Échec du test d'impression\n\nImprimante: ${printer.name}\nErreur: ${errorMessage}\n\nVérifiez que les popups ne sont pas bloqués dans votre navigateur.`);
+      alert('✗ Test échoué\nVérifiez l\'imprimante.');
       console.error('Erreur test impression:', error);
     }
   };
 
-  const handleToggleStatus = (printerId: string) => {
-    const updatedPrinters = printers.map(p => 
-      p.id === printerId 
-        ? { ...p, isActive: !p.isActive }
-        : p
+  const handleToggleActive = (printerId: string) => {
+    const updatedPrinters = printers.map(p =>
+      p.id === printerId ? { ...p, isActive: !p.isActive } : p
     );
     setPrinters(updatedPrinters);
     printService.setPrinters(updatedPrinters);
   };
 
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'caisse': return 'Caisse';
+      case 'cuisine': return 'Cuisine';
+      case 'bar': return 'Bar';
+      default: return type;
+    }
+  };
+
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'cuisine':
-        return 'bg-orange-100 text-orange-800';
-      case 'bar':
-        return 'bg-blue-100 text-blue-800';
-      case 'caisse':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'caisse': return 'bg-blue-100 text-blue-800';
+      case 'cuisine': return 'bg-orange-100 text-orange-800';
+      case 'bar': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const getTypeText = (type: string) => {
-    switch (type) {
-      case 'cuisine':
-        return 'Cuisine';
-      case 'bar':
-        return 'Bar';
-      case 'caisse':
-        return 'Caisse';
-      default:
-        return type;
-    }
-  };
-
-  const getConnectionIcon = (printer: PrinterType) => {
-    if (printer.port > 0) {
-      // Imprimante réseau
-      return printer.isOnline ? (
-        <Wifi className="h-4 w-4 text-green-500" />
-      ) : (
-        <WifiOff className="h-4 w-4 text-red-500" />
-      );
-    } else {
-      // Imprimante locale
-      return printer.isOnline ? (
-        <Monitor className="h-4 w-4 text-green-500" />
-      ) : (
-        <Usb className="h-4 w-4 text-red-500" />
-      );
-    }
-  };
-
-  const getConnectionText = (printer: PrinterType) => {
-    if (printer.port > 0) {
-      return `${printer.ipAddress}:${printer.port}`;
-    } else {
-      return printer.ipAddress; // Pour les imprimantes locales, on stocke le nom dans ipAddress
-    }
-  };
-
-  const getConnectionType = (printer: PrinterType) => {
-    return printer.port > 0 ? 'Réseau' : 'Système';
-  };
-
-  const isDefaultSystemPrinter = (printer: PrinterType) => {
-    const defaultPrinter = printService.getDefaultSystemPrinter();
-    return printer.port === 0 && printer.type === 'caisse' && 
-           defaultPrinter && printer.ipAddress === defaultPrinter.name;
   };
 
   return (
     <div className="space-y-6">
-      {/* En-tête */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Configuration des imprimantes</h2>
-          <p className="text-gray-600">Configuration simple et automatique de vos imprimantes</p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={handleResetPrinters}
-            variant="danger"
-            icon={RotateCcw}
-            size="sm"
-          >
-            Réinitialiser
-          </Button>
-          <Button
-            onClick={handleRefreshSystemPrinters}
-            variant="secondary"
-            icon={RefreshCw}
-            loading={isRefreshing}
-          >
-            {isRefreshing ? 'Détection...' : 'Détecter'}
-          </Button>
-          <Button onClick={handleCreatePrinter} icon={Plus}>
-            Ajouter
-          </Button>
+          <h2 className="text-2xl font-bold text-gray-900">Imprimantes</h2>
+          <p className="text-gray-600">Configuration simple en 1 clic</p>
         </div>
       </div>
 
-      {/* Informations sur l'imprimante par défaut */}
-      {printers.length > 0 && printers.some(p => p.type === 'caisse' && p.isActive) && (
-        <Card className="border-green-200 bg-green-50">
-          <div className="flex items-center gap-3">
-            <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-green-900">✓ Imprimante de caisse activée</h3>
-              <p className="text-sm text-green-700">
-                L'imprimante système est prête pour imprimer les tickets et additions
-              </p>
-            </div>
-            <Printer className="h-8 w-8 text-green-600" />
+      {printers.length === 0 ? (
+        <Card className="text-center py-12">
+          <Printer className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            Configuration automatique
+          </h3>
+          <p className="text-gray-600 mb-6">
+            Cliquez pour détecter votre imprimante système
+          </p>
+          <Button
+            onClick={handleAutoSetup}
+            loading={isInitializing}
+            size="lg"
+            icon={Printer}
+          >
+            {isInitializing ? 'Détection...' : 'Configurer automatiquement'}
+          </Button>
+          <div className="mt-6 pt-6 border-t">
+            <Button
+              onClick={handleAddPrinter}
+              variant="secondary"
+              icon={Plus}
+            >
+              Ajouter manuellement
+            </Button>
           </div>
         </Card>
-      )}
-
-      {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card padding="sm" className="text-center">
-          <div className="text-2xl font-bold text-gray-900">{printers.length}</div>
-          <div className="text-sm text-gray-600">Total</div>
-        </Card>
-        <Card padding="sm" className="text-center">
-          <div className="text-2xl font-bold text-green-600">
-            {printers.filter(p => p.isActive && p.isOnline).length}
-          </div>
-          <div className="text-sm text-gray-600">En ligne</div>
-        </Card>
-        <Card padding="sm" className="text-center">
-          <div className="text-2xl font-bold text-blue-600">
-            {printers.filter(p => p.port > 0).length}
-          </div>
-          <div className="text-sm text-gray-600">Réseau</div>
-        </Card>
-        <Card padding="sm" className="text-center">
-          <div className="text-2xl font-bold text-purple-600">
-            {printers.filter(p => p.port === 0).length}
-          </div>
-          <div className="text-sm text-gray-600">Système</div>
-        </Card>
-        <Card padding="sm" className="text-center">
-          <div className="text-2xl font-bold text-gray-600">
-            {printers.filter(p => !p.isActive).length}
-          </div>
-          <div className="text-sm text-gray-600">Inactives</div>
-        </Card>
-      </div>
-
-      {/* Guide de démarrage rapide */}
-      {printers.length === 0 && (
-        <Card className="border-blue-200 bg-blue-50">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="font-semibold text-blue-900 mb-2">Première utilisation</h3>
-              <div className="text-sm text-blue-800 space-y-2">
-                <p><strong>1.</strong> Une imprimante de caisse par défaut sera créée automatiquement</p>
-                <p><strong>2.</strong> Elle utilisera l'imprimante système de votre ordinateur</p>
-                <p><strong>3.</strong> Vous pouvez ajouter d'autres imprimantes pour la cuisine/bar avec le bouton "Ajouter"</p>
+      ) : (
+        <>
+          <Card className="border-green-200 bg-green-50">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-green-900">Configuration active</h3>
+                <p className="text-sm text-green-700">
+                  {printers.filter(p => p.isActive).length} imprimante(s) prête(s)
+                </p>
               </div>
             </div>
-          </div>
-        </Card>
-      )}
+          </Card>
 
-      {/* Liste des imprimantes */}
-      <Card>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Imprimantes configurées</h3>
-
-        {printers.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            <Printer className="h-16 w-16 mx-auto mb-4" />
-            <h4 className="text-lg font-medium mb-2">Aucune imprimante configurée</h4>
-            <p className="text-sm mb-4">Cliquez sur "Détecter" pour une configuration automatique</p>
-            <div className="flex justify-center gap-3">
-              <Button
-                onClick={handleRefreshSystemPrinters}
-                icon={RefreshCw}
-                loading={isRefreshing}
-                size="lg"
-              >
-                {isRefreshing ? 'Détection en cours...' : 'Détecter les imprimantes'}
+          <Card>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Mes imprimantes</h3>
+              <Button onClick={handleAddPrinter} icon={Plus} size="sm">
+                Ajouter
               </Button>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {printers.map(printer => (
-              <div key={printer.id} className={`flex items-center justify-between p-4 rounded-lg ${
-                isDefaultSystemPrinter(printer) ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
-              }`}>
-                <div className="flex items-center space-x-4">
-                  <div className={`p-3 rounded-lg ${
-                    printer.isOnline ? 'bg-green-100' : 'bg-red-100'
-                  }`}>
-                    <Printer className={`h-6 w-6 ${
-                      printer.isOnline ? 'text-green-600' : 'text-red-600'
-                    }`} />
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-semibold text-gray-900">{printer.name}</h4>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(printer.type)}`}>
-                        {getTypeText(printer.type)}
-                      </span>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        printer.port > 0 ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                      }`}>
-                        {getConnectionType(printer)}
-                      </span>
-                      {getConnectionIcon(printer)}
-                      {isDefaultSystemPrinter(printer) && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Par défaut
+
+            <div className="space-y-3">
+              {printers.map(printer => (
+                <div
+                  key={printer.id}
+                  className={`flex items-center justify-between p-4 rounded-lg border ${
+                    printer.isActive ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-lg ${
+                      printer.isActive ? 'bg-green-100' : 'bg-gray-200'
+                    }`}>
+                      <Printer className={`h-6 w-6 ${
+                        printer.isActive ? 'text-green-600' : 'text-gray-500'
+                      }`} />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-gray-900">{printer.name}</h4>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(printer.type)}`}>
+                          {getTypeLabel(printer.type)}
                         </span>
-                      )}
-                    </div>
-                    
-                    <div className="text-sm text-gray-600">
-                      <p>{printer.model} • {printer.paperSize} • {getConnectionText(printer)}</p>
-                      {printer.categories.length > 0 && (
-                        <p className="mt-1">
-                          <span className="font-medium">Catégories:</span> {printer.categories.join(', ')}
-                        </p>
-                      )}
-                      {isDefaultSystemPrinter(printer) && (
-                        <p className="text-green-600 text-xs mt-1">
-                          Configurée automatiquement avec l'imprimante système par défaut
-                        </p>
-                      )}
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {printer.model} • {printer.paperSize}
+                      </p>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => handleTestPrint(printer)}
-                    disabled={!printer.isOnline || !printer.isActive}
-                    icon={TestTube}
-                  >
-                    Test
-                  </Button>
-                  
-                  <button
-                    onClick={() => handleToggleStatus(printer.id)}
-                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                      printer.isActive
-                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                        : 'bg-red-100 text-red-800 hover:bg-red-200'
-                    }`}
-                  >
-                    {printer.isActive ? 'Actif' : 'Inactif'}
-                  </button>
-                  
-                  <button
-                    onClick={() => handleEditPrinter(printer)}
-                    className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </button>
-                  
-                  <button
-                    onClick={() => handleDeletePrinter(printer.id)}
-                    className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                    disabled={printer.id === 'default-cash-printer'}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => handleTestPrint(printer)}
+                      disabled={!printer.isActive}
+                    >
+                      Test
+                    </Button>
 
-      {/* Configuration globale */}
-      <Card>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuration globale</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Paramètres d'impression</h4>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Impression automatique des commandes</span>
-                <input type="checkbox" defaultChecked className="rounded" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Impression des tickets clients</span>
-                <input type="checkbox" defaultChecked className="rounded" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Impression des additions</span>
-                <input type="checkbox" defaultChecked className="rounded" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Impression des ajouts de commande</span>
-                <input type="checkbox" defaultChecked className="rounded" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Utiliser l'imprimante système par défaut pour la caisse</span>
-                <input type="checkbox" defaultChecked className="rounded" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Détection automatique des imprimantes locales</span>
-                <input type="checkbox" defaultChecked className="rounded" />
+                    <button
+                      onClick={() => handleToggleActive(printer.id)}
+                      className={`px-3 py-1 rounded text-xs font-medium ${
+                        printer.isActive
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      {printer.isActive ? 'Actif' : 'Inactif'}
+                    </button>
+
+                    <button
+                      onClick={() => handleEditPrinter(printer)}
+                      className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      Modifier
+                    </button>
+
+                    <button
+                      onClick={() => handleDeletePrinter(printer.id)}
+                      className="px-3 py-1 text-sm text-red-600 hover:text-red-800"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="border-blue-200 bg-blue-50">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <p className="font-medium mb-1">Conseil</p>
+                <p>Pour la caisse, utilisez l'imprimante système (configuration automatique)</p>
+                <p>Pour cuisine/bar, ajoutez des imprimantes réseau si nécessaire</p>
               </div>
             </div>
-          </div>
-          
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Paramètres de connexion</h4>
-            <div className="space-y-3">
-              <Input
-                label="Délai de connexion réseau (ms)"
-                type="number"
-                defaultValue="5000"
-                size="sm"
-              />
-              <Input
-                label="Tentatives de reconnexion"
-                type="number"
-                defaultValue="3"
-                size="sm"
-              />
-              <Input
-                label="Intervalle de vérification (min)"
-                type="number"
-                defaultValue="5"
-                size="sm"
-              />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Vérification automatique du statut</span>
-                <input type="checkbox" defaultChecked className="rounded" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
+          </Card>
+        </>
+      )}
 
-      {/* Modal de création/édition */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           setEditingPrinter(null);
         }}
-        title={editingPrinter ? 'Modifier l\'imprimante' : 'Ajouter une imprimante'}
+        title={editingPrinter ? 'Modifier' : 'Ajouter une imprimante'}
         size="lg"
       >
         <PrinterForm
