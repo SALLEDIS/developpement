@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Plus, Minus, Trash2, CreditCard, Banknote, Smartphone, Receipt, FileText, Printer, DollarSign, Calculator, Users, Clock, Search, X, Tag, Grid3x3, Edit, User, MessageSquare, RotateCcw } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Trash2, CreditCard, Banknote, Smartphone, Receipt, FileText, Printer, DollarSign, Calculator, Users, Clock, Search, X, Tag, Grid3x3, Edit, User, MessageSquare, RotateCcw, Scale, Wifi } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -323,13 +323,13 @@ const POSSystem: React.FC = () => {
       <div className="flex flex-1 overflow-hidden">
         {/* Categories Sidebar - Only shown in products mode */}
         {viewMode === 'products' && selectedTableId && (
-          <div className="w-40 bg-gray-700 flex flex-col overflow-y-auto">
+          <div className="w-48 bg-gradient-to-b from-gray-600 to-gray-700 flex flex-col overflow-y-auto shadow-xl">
             {categories.filter(c => c.isActive).map(category => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.name)}
-                className={`px-4 py-4 text-sm font-semibold text-white border-b border-gray-600 hover:bg-gray-600 transition-all ${
-                  selectedCategory === category.name ? 'bg-gray-800' : ''
+                className={`px-4 py-5 text-sm font-bold text-white border-b border-gray-500 hover:bg-gray-500 transition-all text-center uppercase ${
+                  selectedCategory === category.name ? 'bg-gray-800 border-l-4 border-l-cyan-400' : ''
                 }`}
               >
                 {category.name}
@@ -364,54 +364,36 @@ const POSSystem: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
               {displayedProducts.map(product => (
-                <div
-                  key={product.id}
-                  className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 overflow-hidden cursor-pointer"
-                >
-                  <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200">
-                    {product.image ? (
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <img
-                        src={`https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop`}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                  </div>
-
-                  <div className="p-4">
-                    <h3 className="font-bold text-gray-900 mb-2 text-base line-clamp-2 min-h-[3rem]">{product.name}</h3>
-
-                    {product.sizes ? (
-                      <div className="space-y-2">
-                        {product.sizes.map((size: any) => (
-                          <button
-                            key={size.name}
-                            onClick={() => addToCart(product, size.name)}
-                            className="w-full flex justify-between items-center px-3 py-2 bg-gray-50 hover:bg-cyan-50 rounded-lg transition-all border border-gray-200 hover:border-cyan-300"
-                          >
-                            <span className="text-sm font-medium text-gray-700">{size.name}</span>
-                            <span className="font-bold text-cyan-600">{size.price.toLocaleString('fr-FR')} CFA</span>
-                          </button>
-                        ))}
+                product.sizes ? (
+                  product.sizes.map((size: any) => (
+                    <button
+                      key={`${product.id}-${size.name}`}
+                      onClick={() => addToCart(product, size.name)}
+                      className="bg-gradient-to-br from-cyan-400 to-cyan-500 hover:from-cyan-500 hover:to-cyan-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all p-4 flex flex-col items-center justify-between min-h-[120px]"
+                    >
+                      <div className="text-center font-bold text-sm uppercase leading-tight mb-2">
+                        {product.name}
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => addToCart(product)}
-                        className="w-full bg-gradient-to-r from-cyan-500 to-teal-500 text-white py-3 rounded-xl font-bold text-lg hover:from-cyan-600 hover:to-teal-600 transition-all shadow-md"
-                      >
-                        {product.price.toLocaleString('fr-FR')} CFA
-                      </button>
-                    )}
-                  </div>
-                </div>
+                      <div className="text-center">
+                        <div className="text-xs opacity-90 mb-1">{size.name}</div>
+                        <div className="text-3xl font-bold">{size.price}</div>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <button
+                    key={product.id}
+                    onClick={() => addToCart(product)}
+                    className="bg-gradient-to-br from-cyan-400 to-cyan-500 hover:from-cyan-500 hover:to-cyan-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all p-4 flex flex-col items-center justify-between min-h-[120px]"
+                  >
+                    <div className="text-center font-bold text-sm uppercase leading-tight mb-2">
+                      {product.name}
+                    </div>
+                    <div className="text-3xl font-bold">{product.price}</div>
+                  </button>
+                )
               ))}
             </div>
           )}
@@ -438,9 +420,11 @@ const POSSystem: React.FC = () => {
           </div>
 
           {/* Items List Header */}
-          <div className="bg-gray-100 px-4 py-2 border-b border-gray-300 grid grid-cols-12 gap-2 font-semibold text-sm text-gray-700">
-            <div className="col-span-9">Article</div>
-            <div className="col-span-3 text-right">Qté</div>
+          <div className="bg-gray-100 px-4 py-2 border-b border-gray-300 grid grid-cols-12 gap-2 font-semibold text-xs text-gray-700">
+            <div className="col-span-5">Article</div>
+            <div className="col-span-2 text-center">Qte</div>
+            <div className="col-span-3 text-right">Px Total</div>
+            <div className="col-span-2 text-right">%</div>
           </div>
 
           {/* Items List */}
@@ -448,46 +432,48 @@ const POSSystem: React.FC = () => {
             {selectedOrderForPayment && selectedOrderForPayment.items.length > 0 ? (
               <div className="divide-y divide-gray-200">
                 {selectedOrderForPayment.items.map(item => (
-                  <div key={item.id} className="px-4 py-3 grid grid-cols-12 gap-2 hover:bg-gray-50">
-                    <div className="col-span-9">
-                      <p className="font-medium text-gray-900">{item.productName}</p>
+                  <div key={item.id} className="px-4 py-2 grid grid-cols-12 gap-2 hover:bg-cyan-50 text-sm">
+                    <div className="col-span-5">
+                      <p className="font-bold text-cyan-700">{item.productName}</p>
                       {item.size && (
                         <p className="text-xs text-gray-600">{item.size}</p>
                       )}
-                      <p className="text-sm text-gray-600">{item.price.toLocaleString('fr-FR')} CFA</p>
                     </div>
-                    <div className="col-span-3 text-right font-bold text-gray-900">{item.quantity}</div>
+                    <div className="col-span-2 text-center font-bold text-gray-900">{item.quantity}</div>
+                    <div className="col-span-3 text-right font-bold text-gray-900">{(item.price * item.quantity).toLocaleString('fr-FR')}</div>
+                    <div className="col-span-2 text-right font-bold text-gray-900">-</div>
                   </div>
                 ))}
               </div>
             ) : cart.length > 0 ? (
               <div className="divide-y divide-gray-200">
                 {cart.map(item => (
-                  <div key={item.id} className="px-4 py-3 grid grid-cols-12 gap-2 hover:bg-gray-50">
-                    <div className="col-span-9">
-                      <p className="font-medium text-gray-900">{item.productName}</p>
+                  <div key={item.id} className="px-4 py-2 grid grid-cols-12 gap-2 hover:bg-cyan-50 text-sm">
+                    <div className="col-span-5">
+                      <p className="font-bold text-cyan-700">{item.productName}</p>
                       {item.size && (
                         <p className="text-xs text-gray-600">{item.size}</p>
                       )}
-                      <p className="text-sm text-gray-600">{item.price.toLocaleString('fr-FR')} CFA</p>
                     </div>
-                    <div className="col-span-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
+                    <div className="col-span-2 text-center">
+                      <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded flex items-center justify-center"
+                          className="w-5 h-5 bg-gray-200 hover:bg-gray-300 rounded flex items-center justify-center"
                         >
                           <Minus className="h-3 w-3" />
                         </button>
-                        <span className="font-bold text-gray-900 w-8 text-center">{item.quantity}</span>
+                        <span className="font-bold text-gray-900 w-6 text-center">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded flex items-center justify-center"
+                          className="w-5 h-5 bg-gray-200 hover:bg-gray-300 rounded flex items-center justify-center"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
                       </div>
                     </div>
+                    <div className="col-span-3 text-right font-bold text-gray-900">{(item.price * item.quantity).toLocaleString('fr-FR')}</div>
+                    <div className="col-span-2 text-right font-bold text-gray-900">-</div>
                   </div>
                 ))}
               </div>
@@ -502,36 +488,53 @@ const POSSystem: React.FC = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="border-t border-gray-300 px-4 py-3 bg-gray-50">
-            <div className="grid grid-cols-4 gap-2 mb-3">
+          <div className="border-t border-gray-300 px-4 py-3 bg-white">
+            <div className="grid grid-cols-5 gap-2 mb-3">
               <button
                 onClick={() => updateQuantity(cart[cart.length - 1]?.id, (cart[cart.length - 1]?.quantity || 0) + 1)}
                 disabled={cart.length === 0}
-                className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1 disabled:opacity-50"
+                className="px-2 py-3 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1 disabled:opacity-50"
               >
-                <Calculator className="h-5 w-5 text-gray-700" />
-                <span className="text-xs font-medium text-gray-700">Quantité</span>
+                <Calculator className="h-7 w-7 text-gray-700" />
+                <span className="text-xs font-semibold text-gray-700">Quantité</span>
               </button>
               <button
                 onClick={clearCart}
-                className="px-3 py-2 bg-white border-2 border-red-300 rounded-lg hover:bg-red-50 transition-all flex flex-col items-center gap-1"
+                className="px-2 py-3 bg-white border-2 border-red-300 rounded-lg hover:bg-red-50 transition-all flex flex-col items-center gap-1"
               >
-                <X className="h-5 w-5 text-red-600" />
-                <span className="text-xs font-medium text-red-600">Supprimer</span>
+                <X className="h-7 w-7 text-red-600" />
+                <span className="text-xs font-semibold text-red-600">Supprimer</span>
               </button>
               <button
                 disabled={cart.length === 0}
-                className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1 disabled:opacity-50"
+                className="px-2 py-3 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1 disabled:opacity-50"
               >
-                <RotateCcw className="h-5 w-5 text-gray-700" />
-                <span className="text-xs font-medium text-gray-700">Remise</span>
+                <RotateCcw className="h-7 w-7 text-gray-700" />
+                <span className="text-xs font-semibold text-gray-700">Remise</span>
               </button>
               <button
                 disabled={cart.length === 0}
-                className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1 disabled:opacity-50"
+                className="px-2 py-3 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1 disabled:opacity-50"
               >
-                <MessageSquare className="h-5 w-5 text-gray-700" />
-                <span className="text-xs font-medium text-gray-700">Remarque</span>
+                <MessageSquare className="h-7 w-7 text-gray-700" />
+                <span className="text-xs font-semibold text-gray-700">Remarque</span>
+              </button>
+              <button
+                disabled={cart.length === 0}
+                className="px-2 py-3 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1 disabled:opacity-50"
+              >
+                <Scale className="h-7 w-7 text-gray-700" />
+                <span className="text-xs font-semibold text-gray-700">Peser</span>
+              </button>
+            </div>
+
+            {/* Up/Down Arrows */}
+            <div className="flex justify-center gap-4 mb-3">
+              <button className="w-12 h-12 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center">
+                <Plus className="h-8 w-8 text-gray-700" />
+              </button>
+              <button className="w-12 h-12 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center">
+                <Minus className="h-8 w-8 text-gray-700" />
               </button>
             </div>
 
@@ -554,66 +557,88 @@ const POSSystem: React.FC = () => {
                     alert('Aucun client sélectionné');
                   }
                 }}
-                className="px-3 py-4 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-lg hover:from-cyan-600 hover:to-cyan-700 transition-all shadow-lg flex flex-col items-center gap-2"
+                className="px-3 py-5 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-xl hover:from-cyan-600 hover:to-cyan-700 transition-all shadow-lg flex flex-col items-center gap-2"
               >
-                <User className="h-6 w-6" />
+                <User className="h-10 w-10" />
                 <span className="text-sm font-bold">Client</span>
               </button>
               <button
                 onClick={() => setViewMode('products')}
-                className="px-3 py-4 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg flex flex-col items-center gap-2"
+                className="px-3 py-5 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all shadow-lg flex flex-col items-center gap-2"
               >
-                <ShoppingCart className="h-6 w-6" />
+                <Clock className="h-10 w-10" />
                 <span className="text-sm font-bold">A Suivre..</span>
               </button>
               <button
                 onClick={printBill}
                 disabled={cart.length === 0}
-                className="px-3 py-4 bg-gradient-to-br from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg flex flex-col items-center gap-2 disabled:opacity-50"
+                className="px-3 py-5 bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all shadow-lg flex flex-col items-center gap-2 disabled:opacity-50"
               >
-                <Minus className="h-6 w-6" />
+                <Minus className="h-10 w-10" />
                 <span className="text-sm font-bold">Séparateur</span>
               </button>
               <button
                 onClick={sendOrderToPrinters}
                 disabled={cart.length === 0 || !selectedTableId}
-                className="px-3 py-4 bg-gradient-to-br from-pink-500 to-pink-600 text-white rounded-lg hover:from-pink-600 hover:to-pink-700 transition-all shadow-lg flex flex-col items-center gap-2 disabled:opacity-50"
+                className="px-3 py-5 bg-gradient-to-br from-pink-500 to-pink-600 text-white rounded-xl hover:from-pink-600 hover:to-pink-700 transition-all shadow-lg flex flex-col items-center gap-2 disabled:opacity-50"
               >
-                <Printer className="h-6 w-6" />
+                <Wifi className="h-10 w-10" />
                 <span className="text-sm font-bold">Fabrication</span>
               </button>
             </div>
 
+            {/* Code article search */}
+            <div className="mb-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Code article"
+                  className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-cyan-500"
+                />
+                <button className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-all">
+                  <Search className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
             {/* Total */}
-            <div className="bg-gradient-to-r from-cyan-500 to-teal-600 rounded-xl px-6 py-4 mb-3 text-center shadow-lg">
-              <div className="text-white text-sm font-medium mb-1">Total</div>
-              <div className="text-white text-4xl font-bold">
+            <div className="bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-xl px-6 py-3 mb-3 flex items-center justify-between shadow-lg">
+              <div className="text-white text-6xl font-bold">
                 {total.toLocaleString('fr-FR')} CFA
+              </div>
+              <div className="text-white text-2xl font-bold">
+                {cart.length}
               </div>
             </div>
 
             {/* Bottom Actions */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
+              <button
+                className="px-3 py-5 bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all shadow-lg flex flex-col items-center gap-2"
+              >
+                <ShoppingCart className="h-9 w-9" />
+                <span className="text-xs font-bold">Sur place</span>
+              </button>
               <button
                 onClick={openCashDrawer}
-                className="px-3 py-4 bg-gradient-to-br from-teal-700 to-teal-800 text-white rounded-lg hover:from-teal-800 hover:to-teal-900 transition-all shadow-md flex flex-col items-center gap-2"
+                className="px-3 py-5 bg-gradient-to-br from-cyan-600 to-cyan-700 text-white rounded-xl hover:from-cyan-700 hover:to-cyan-800 transition-all shadow-lg flex flex-col items-center gap-2"
               >
-                <DollarSign className="h-6 w-6" />
+                <DollarSign className="h-9 w-9" />
                 <span className="text-xs font-bold">Tiroir</span>
               </button>
               <button
                 disabled={cart.length === 0}
-                className="px-3 py-4 bg-gradient-to-br from-amber-600 to-amber-700 text-white rounded-lg hover:from-amber-700 hover:to-amber-800 transition-all shadow-md flex flex-col items-center gap-2 disabled:opacity-50"
+                className="px-3 py-5 bg-gradient-to-br from-amber-600 to-amber-700 text-white rounded-xl hover:from-amber-700 hover:to-amber-800 transition-all shadow-lg flex flex-col items-center gap-2 disabled:opacity-50"
               >
-                <Clock className="h-6 w-6" />
+                <Clock className="h-9 w-9" />
                 <span className="text-xs font-bold">Attente</span>
               </button>
               <button
                 onClick={processPayment}
                 disabled={(cart.length === 0 && !selectedOrderForPayment)}
-                className="px-3 py-4 bg-gradient-to-br from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-md flex flex-col items-center gap-2 disabled:opacity-50"
+                className="px-3 py-5 bg-gradient-to-br from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg flex flex-col items-center gap-2 disabled:opacity-50"
               >
-                <CreditCard className="h-6 w-6" />
+                <Tag className="h-9 w-9" />
                 <span className="text-xs font-bold">Paiement</span>
               </button>
             </div>
