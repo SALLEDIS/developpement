@@ -29,6 +29,7 @@ export interface Category {
   description: string;
   icon: string;
   isActive: boolean;
+  printer?: 'cuisine' | 'bar' | 'caisse';
 }
 
 export interface Printer {

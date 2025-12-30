@@ -19,6 +19,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
     description: '',
     icon: 'utensils',
     isActive: true,
+    printer: 'cuisine' as 'cuisine' | 'bar' | 'caisse' | undefined,
   });
 
   const iconOptions = [
@@ -41,6 +42,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
         description: category.description,
         icon: category.icon,
         isActive: category.isActive,
+        printer: category.printer || 'cuisine',
       });
     }
   }, [category]);
@@ -96,6 +98,24 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
             </button>
           ))}
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Imprimante par défaut
+        </label>
+        <select
+          value={formData.printer || 'cuisine'}
+          onChange={(e) => handleInputChange('printer', e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="cuisine">Cuisine</option>
+          <option value="bar">Bar</option>
+          <option value="caisse">Caisse</option>
+        </select>
+        <p className="text-xs text-gray-500 mt-1">
+          Les produits de cette catégorie seront imprimés sur cette imprimante
+        </p>
       </div>
 
       <div>

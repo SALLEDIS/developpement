@@ -318,19 +318,21 @@ const ProductsManagement: React.FC = () => {
         size="lg"
       >
         <div className="space-y-4">
-          <div className="flex justify-end">
-            <Button
-              onClick={() => setEditingCategory({})}
-              icon={Plus}
-              size="sm"
-            >
-              Nouvelle catégorie
-            </Button>
-          </div>
+          {editingCategory === null && (
+            <div className="flex justify-end">
+              <Button
+                onClick={() => setEditingCategory({} as any)}
+                icon={Plus}
+                size="sm"
+              >
+                Nouvelle catégorie
+              </Button>
+            </div>
+          )}
 
           {editingCategory !== null ? (
             <CategoryForm
-              category={editingCategory}
+              category={editingCategory.id ? editingCategory : null}
               onSave={(categoryData) => {
                 if (editingCategory.id) {
                   updateCategory(editingCategory.id, categoryData);
@@ -342,36 +344,51 @@ const ProductsManagement: React.FC = () => {
               onCancel={() => setEditingCategory(null)}
             />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-auto">
-              {categories.map(category => (
-                <div key={category.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{category.name}</p>
-                    <p className="text-sm text-gray-600">{category.description}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {products.filter(p => p.category === category.name).length} produits
-                    </p>
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => setEditingCategory(category)}
-                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
-                          deleteCategory(category.id);
-                        }
-                      }}
-                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+            <div className="space-y-4">
+              {categories.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p className="text-lg font-medium mb-2">Aucune catégorie</p>
+                  <p className="text-sm">Créez votre première catégorie pour organiser vos produits</p>
                 </div>
-              ))}
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-auto">
+                  {categories.map(category => (
+                    <div key={category.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{category.name}</p>
+                        <p className="text-sm text-gray-600">{category.description}</p>
+                        {category.printer && (
+                          <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+                            <Printer className="h-3 w-3" />
+                            {category.printer === 'cuisine' ? 'Cuisine' : category.printer === 'bar' ? 'Bar' : 'Caisse'}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          {products.filter(p => p.category === category.name).length} produits
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => setEditingCategory(category)}
+                          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
+                              deleteCategory(category.id);
+                            }
+                          }}
+                          className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
