@@ -6,6 +6,7 @@ import UserManagement from './UserManagement';
 import RestaurantSettings from './RestaurantSettings';
 import CashManagement from './CashManagement';
 import PaymentSettings from './PaymentSettings';
+import SecuritySettings from './SecuritySettings';
 
 const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('printers');
@@ -40,12 +41,7 @@ const Settings: React.FC = () => {
           </Card>
         );
       case 'security':
-        return (
-          <Card>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Paramètres de sécurité</h3>
-            <p className="text-gray-600">Configuration de la sécurité à venir...</p>
-          </Card>
-        );
+        return <SecuritySettings />;
       default:
         return <PrinterSettings />;
     }
