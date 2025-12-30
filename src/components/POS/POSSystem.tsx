@@ -35,6 +35,7 @@ const POSSystem: React.FC = () => {
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<Order | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [viewMode, setViewMode] = useState<'tables' | 'products'>('tables');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
 
   const printService = PrintService.getInstance();
   const activeOrders = getActiveOrders();
@@ -48,6 +49,9 @@ const POSSystem: React.FC = () => {
 
   const sections = ['A', 'B', 'C', 'D'];
   const activeProducts = getActiveProducts();
+  const displayedProducts = selectedCategory
+    ? activeProducts.filter(p => p.category === selectedCategory)
+    : activeProducts;
 
   const tablesWithOrders = tables.map(table => {
     const order = activeOrders.find(o => o.tableId === table.id);
@@ -215,6 +219,52 @@ const POSSystem: React.FC = () => {
       setSelectedTableId(table.id);
       setSelectedOrderForPayment(null);
     }
+    setViewMode('products');
+    if (categories.length > 0) {
+      setSelectedCategory(categories[0].name);
+    }
+  };
+
+  const sendOrderToPrinters = async () => {
+    if (cart.length === 0 || !selectedTableId) {
+      alert('Veuillez sélectionner une table et ajouter des articles');
+      return;
+    }
+
+    try {
+      const order = createOrder();
+      addOrder(order);
+
+      if (selectedTableId) {
+        updateTableStatus(selectedTableId, 'occupied');
+      }
+
+      const itemsByPrinter: { [key: string]: OrderItem[] } = {};
+
+      cart.forEach(item => {
+        const product = products.find(p => p.id === item.productId);
+        const category = categories.find(c => c.name === item.category);
+
+        const printerType = item.printer || product?.printer || category?.printer || 'cuisine';
+
+        if (!itemsByPrinter[printerType]) {
+          itemsByPrinter[printerType] = [];
+        }
+        itemsByPrinter[printerType].push(item);
+      });
+
+      for (const [printerType, items] of Object.entries(itemsByPrinter)) {
+        console.log(`Envoi de ${items.length} articles à l'imprimante ${printerType}`);
+        await printService.printOrder(items, [items[0].category || ''], 'dine-in', selectedTableId);
+      }
+
+      alert(`Commande envoyée aux imprimantes !\nTable: ${tables.find(t => t.id === selectedTableId)?.number || selectedTableId}`);
+      clearCart();
+      setViewMode('tables');
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi aux imprimantes:', error);
+      alert('Erreur lors de l\'envoi de la commande aux imprimantes');
+    }
   };
 
   const openCashDrawer = () => {
@@ -271,7 +321,24 @@ const POSSystem: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Tables Grid */}
+        {/* Categories Sidebar - Only shown in products mode */}
+        {viewMode === 'products' && selectedTableId && (
+          <div className="w-40 bg-gray-700 flex flex-col overflow-y-auto">
+            {categories.filter(c => c.isActive).map(category => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.name)}
+                className={`px-4 py-4 text-sm font-semibold text-white border-b border-gray-600 hover:bg-gray-600 transition-all ${
+                  selectedCategory === category.name ? 'bg-gray-800' : ''
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Tables Grid / Products Grid */}
         <div className="flex-1 p-4 overflow-auto">
           {viewMode === 'tables' ? (
             <div className="grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-11 gap-3">
@@ -298,7 +365,7 @@ const POSSystem: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {activeProducts.map(product => (
+              {displayedProducts.map(product => (
                 <div
                   key={product.id}
                   className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 overflow-hidden cursor-pointer"
@@ -353,9 +420,19 @@ const POSSystem: React.FC = () => {
         {/* Right Sidebar */}
         <div className="w-96 bg-white shadow-2xl flex flex-col">
           {/* Header */}
-          <div className="bg-gradient-to-r from-gray-100 to-gray-200 px-4 py-3 border-b border-gray-300 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900">Tables ?</h2>
-            <button className="text-gray-600 hover:text-gray-900">
+          <div className="bg-gradient-to-r from-pink-500 to-pink-600 px-4 py-3 border-b border-pink-700 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white">
+              {selectedTableId
+                ? `Table: ${tables.find(t => t.id === selectedTableId)?.number || '?'} / ${cart.length} CV`
+                : 'Tables ?'}
+            </h2>
+            <button
+              onClick={() => {
+                clearCart();
+                setViewMode('tables');
+              }}
+              className="text-white hover:text-gray-100"
+            >
               <X className="h-6 w-6" />
             </button>
           </div>
@@ -426,21 +503,35 @@ const POSSystem: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="border-t border-gray-300 px-4 py-3 bg-gray-50">
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              <button className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1">
-                <RotateCcw className="h-5 w-5 text-gray-700" />
-                <span className="text-xs font-medium text-gray-700">Réimprimer</span>
+            <div className="grid grid-cols-4 gap-2 mb-3">
+              <button
+                onClick={() => updateQuantity(cart[cart.length - 1]?.id, (cart[cart.length - 1]?.quantity || 0) + 1)}
+                disabled={cart.length === 0}
+                className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1 disabled:opacity-50"
+              >
+                <Calculator className="h-5 w-5 text-gray-700" />
+                <span className="text-xs font-medium text-gray-700">Quantité</span>
               </button>
               <button
                 onClick={clearCart}
                 className="px-3 py-2 bg-white border-2 border-red-300 rounded-lg hover:bg-red-50 transition-all flex flex-col items-center gap-1"
               >
                 <X className="h-5 w-5 text-red-600" />
-                <span className="text-xs font-medium text-red-600">Annuler</span>
+                <span className="text-xs font-medium text-red-600">Supprimer</span>
               </button>
-              <button className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1">
-                <Users className="h-5 w-5 text-gray-700" />
-                <span className="text-xs font-medium text-gray-700">Transfert</span>
+              <button
+                disabled={cart.length === 0}
+                className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1 disabled:opacity-50"
+              >
+                <RotateCcw className="h-5 w-5 text-gray-700" />
+                <span className="text-xs font-medium text-gray-700">Remise</span>
+              </button>
+              <button
+                disabled={cart.length === 0}
+                className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1 disabled:opacity-50"
+              >
+                <MessageSquare className="h-5 w-5 text-gray-700" />
+                <span className="text-xs font-medium text-gray-700">Remarque</span>
               </button>
             </div>
 
@@ -454,27 +545,42 @@ const POSSystem: React.FC = () => {
             </div>
 
             {/* Main Actions */}
-            <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="grid grid-cols-4 gap-2 mb-3">
               <button
-                onClick={printBill}
-                className="px-3 py-4 bg-gradient-to-br from-amber-600 to-amber-700 text-white rounded-lg hover:from-amber-700 hover:to-amber-800 transition-all shadow-lg flex flex-col items-center gap-2"
+                onClick={() => {
+                  if (selectedCustomer) {
+                    alert('Client: ' + selectedCustomer.name);
+                  } else {
+                    alert('Aucun client sélectionné');
+                  }
+                }}
+                className="px-3 py-4 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-lg hover:from-cyan-600 hover:to-cyan-700 transition-all shadow-lg flex flex-col items-center gap-2"
               >
-                <FileText className="h-6 w-6" />
-                <span className="text-sm font-bold">Addition</span>
+                <User className="h-6 w-6" />
+                <span className="text-sm font-bold">Client</span>
               </button>
               <button
                 onClick={() => setViewMode('products')}
                 className="px-3 py-4 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg flex flex-col items-center gap-2"
               >
                 <ShoppingCart className="h-6 w-6" />
-                <span className="text-sm font-bold">Ouvrir</span>
+                <span className="text-sm font-bold">A Suivre..</span>
               </button>
               <button
-                onClick={printTicket}
-                className="px-3 py-4 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all shadow-lg flex flex-col items-center gap-2"
+                onClick={printBill}
+                disabled={cart.length === 0}
+                className="px-3 py-4 bg-gradient-to-br from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg flex flex-col items-center gap-2 disabled:opacity-50"
               >
-                <Receipt className="h-6 w-6" />
-                <span className="text-sm font-bold">Ticket</span>
+                <Minus className="h-6 w-6" />
+                <span className="text-sm font-bold">Séparateur</span>
+              </button>
+              <button
+                onClick={sendOrderToPrinters}
+                disabled={cart.length === 0 || !selectedTableId}
+                className="px-3 py-4 bg-gradient-to-br from-pink-500 to-pink-600 text-white rounded-lg hover:from-pink-600 hover:to-pink-700 transition-all shadow-lg flex flex-col items-center gap-2 disabled:opacity-50"
+              >
+                <Printer className="h-6 w-6" />
+                <span className="text-sm font-bold">Fabrication</span>
               </button>
             </div>
 
@@ -488,10 +594,6 @@ const POSSystem: React.FC = () => {
 
             {/* Bottom Actions */}
             <div className="grid grid-cols-3 gap-2">
-              <button className="px-3 py-4 bg-gradient-to-br from-cyan-600 to-cyan-700 text-white rounded-lg hover:from-cyan-700 hover:to-cyan-800 transition-all shadow-md flex flex-col items-center gap-2">
-                <User className="h-6 w-6" />
-                <span className="text-xs font-bold">Client</span>
-              </button>
               <button
                 onClick={openCashDrawer}
                 className="px-3 py-4 bg-gradient-to-br from-teal-700 to-teal-800 text-white rounded-lg hover:from-teal-800 hover:to-teal-900 transition-all shadow-md flex flex-col items-center gap-2"
@@ -499,9 +601,20 @@ const POSSystem: React.FC = () => {
                 <DollarSign className="h-6 w-6" />
                 <span className="text-xs font-bold">Tiroir</span>
               </button>
-              <button className="px-3 py-4 bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-md flex flex-col items-center gap-2">
-                <MessageSquare className="h-6 w-6" />
-                <span className="text-xs font-bold">Msg cuis.</span>
+              <button
+                disabled={cart.length === 0}
+                className="px-3 py-4 bg-gradient-to-br from-amber-600 to-amber-700 text-white rounded-lg hover:from-amber-700 hover:to-amber-800 transition-all shadow-md flex flex-col items-center gap-2 disabled:opacity-50"
+              >
+                <Clock className="h-6 w-6" />
+                <span className="text-xs font-bold">Attente</span>
+              </button>
+              <button
+                onClick={processPayment}
+                disabled={(cart.length === 0 && !selectedOrderForPayment)}
+                className="px-3 py-4 bg-gradient-to-br from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-md flex flex-col items-center gap-2 disabled:opacity-50"
+              >
+                <CreditCard className="h-6 w-6" />
+                <span className="text-xs font-bold">Paiement</span>
               </button>
             </div>
           </div>
