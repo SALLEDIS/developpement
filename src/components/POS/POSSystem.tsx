@@ -279,40 +279,41 @@ const POSSystem: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-teal-700 via-teal-800 to-teal-900">
+    <div className="flex flex-col h-screen bg-gray-100">
       {/* Top Bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-teal-800 to-teal-900 border-b border-teal-600">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shadow-sm">
+        <div className="flex items-center gap-3">
           {sections.map(section => (
             <button
               key={section}
               onClick={() => setSelectedSection(section)}
-              className={`w-12 h-10 font-bold text-lg transition-all ${
+              className={`w-14 h-11 font-bold text-base transition-all rounded-lg ${
                 selectedSection === section
-                  ? 'bg-cyan-400 text-gray-900'
-                  : 'bg-gray-600 text-white hover:bg-gray-500'
-              } rounded shadow-md`}
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
             >
               {section}
             </button>
           ))}
+          <div className="ml-4 h-8 w-px bg-gray-300"></div>
           <button
             onClick={() => setViewMode(viewMode === 'tables' ? 'products' : 'tables')}
-            className="ml-4 px-6 py-2 bg-gray-600 text-white font-medium rounded shadow-md hover:bg-gray-500 transition-all"
+            className="ml-2 px-5 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-all"
           >
-            {viewMode === 'tables' ? 'Mode Produits' : 'Mode Tables en boutons'}
+            {viewMode === 'tables' ? 'Produits' : 'Tables'}
           </button>
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="p-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-all">
+          <div className="text-right mr-4">
+            <div className="text-sm font-semibold text-gray-900">{user?.name || 'Admin'}</div>
+            <div className="text-xs text-gray-500">Caissier</div>
+          </div>
+          <button className="p-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all">
             <Edit className="h-5 w-5" />
           </button>
-          <button className="px-4 py-2 bg-gray-700 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-gray-600 transition-all">
-            <User className="h-5 w-5" />
-            Admin
-          </button>
-          <button className="px-4 py-2 bg-cyan-500 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-cyan-600 transition-all shadow-lg">
+          <button className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-blue-700 transition-all shadow-sm">
             <ShoppingCart className="h-5 w-5" />
             Vente directe
           </button>
@@ -323,13 +324,15 @@ const POSSystem: React.FC = () => {
       <div className="flex flex-1 overflow-hidden">
         {/* Categories Sidebar - Only shown in products mode */}
         {viewMode === 'products' && selectedTableId && (
-          <div className="w-48 bg-gradient-to-b from-gray-600 to-gray-700 flex flex-col overflow-y-auto shadow-xl">
+          <div className="w-56 bg-white border-r border-gray-200 flex flex-col overflow-y-auto shadow-sm">
             {categories.filter(c => c.isActive).map(category => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.name)}
-                className={`px-4 py-5 text-sm font-bold text-white border-b border-gray-500 hover:bg-gray-500 transition-all text-center uppercase ${
-                  selectedCategory === category.name ? 'bg-gray-800 border-l-4 border-l-cyan-400' : ''
+                className={`px-5 py-4 text-sm font-semibold border-b border-gray-100 hover:bg-gray-50 transition-all text-left ${
+                  selectedCategory === category.name
+                    ? 'bg-blue-50 text-blue-700 border-l-4 border-l-blue-600'
+                    : 'text-gray-700'
                 }`}
               >
                 {category.name}
@@ -364,21 +367,24 @@ const POSSystem: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
               {displayedProducts.map(product => (
                 product.sizes ? (
                   product.sizes.map((size: any) => (
                     <button
                       key={`${product.id}-${size.name}`}
                       onClick={() => addToCart(product, size.name)}
-                      className="bg-gradient-to-br from-cyan-400 to-cyan-500 hover:from-cyan-500 hover:to-cyan-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all p-4 flex flex-col items-center justify-between min-h-[120px]"
+                      className="bg-white hover:bg-blue-50 border-2 border-gray-200 hover:border-blue-500 rounded-xl shadow-sm hover:shadow-md transition-all p-4 flex flex-col items-center justify-between min-h-[130px] group"
                     >
-                      <div className="text-center font-bold text-sm uppercase leading-tight mb-2">
+                      <div className="text-center font-semibold text-sm text-gray-800 leading-tight mb-3 line-clamp-2">
                         {product.name}
                       </div>
-                      <div className="text-center">
-                        <div className="text-xs opacity-90 mb-1">{size.name}</div>
-                        <div className="text-3xl font-bold">{size.price}</div>
+                      <div className="text-center w-full">
+                        <div className="text-xs text-gray-500 mb-1.5">{size.name}</div>
+                        <div className="text-xl font-bold text-blue-600 group-hover:text-blue-700">
+                          {size.price.toLocaleString('fr-FR')}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-0.5">CFA</div>
                       </div>
                     </button>
                   ))
@@ -386,12 +392,17 @@ const POSSystem: React.FC = () => {
                   <button
                     key={product.id}
                     onClick={() => addToCart(product)}
-                    className="bg-gradient-to-br from-cyan-400 to-cyan-500 hover:from-cyan-500 hover:to-cyan-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all p-4 flex flex-col items-center justify-between min-h-[120px]"
+                    className="bg-white hover:bg-blue-50 border-2 border-gray-200 hover:border-blue-500 rounded-xl shadow-sm hover:shadow-md transition-all p-4 flex flex-col items-center justify-between min-h-[130px] group"
                   >
-                    <div className="text-center font-bold text-sm uppercase leading-tight mb-2">
+                    <div className="text-center font-semibold text-sm text-gray-800 leading-tight mb-3 line-clamp-2">
                       {product.name}
                     </div>
-                    <div className="text-3xl font-bold">{product.price}</div>
+                    <div className="text-center w-full">
+                      <div className="text-xl font-bold text-blue-600 group-hover:text-blue-700">
+                        {product.price.toLocaleString('fr-FR')}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">CFA</div>
+                    </div>
                   </button>
                 )
               ))}
@@ -400,246 +411,195 @@ const POSSystem: React.FC = () => {
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-96 bg-white shadow-2xl flex flex-col">
+        <div className="w-[420px] bg-white border-l border-gray-200 flex flex-col">
           {/* Header */}
-          <div className="bg-gradient-to-r from-pink-500 to-pink-600 px-4 py-3 border-b border-pink-700 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">
-              {selectedTableId
-                ? `Table: ${tables.find(t => t.id === selectedTableId)?.number || '?'} / ${cart.length} CV`
-                : 'Tables ?'}
-            </h2>
+          <div className="bg-blue-600 px-5 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                <ShoppingCart className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-white">
+                  {selectedTableId
+                    ? `Table ${tables.find(t => t.id === selectedTableId)?.number || '?'}`
+                    : 'Commande'}
+                </h2>
+                <p className="text-xs text-blue-100">{cart.length} article{cart.length > 1 ? 's' : ''}</p>
+              </div>
+            </div>
             <button
               onClick={() => {
                 clearCart();
                 setViewMode('tables');
               }}
-              className="text-white hover:text-gray-100"
+              className="text-white hover:bg-white/20 p-2 rounded-lg transition-all"
             >
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
           {/* Items List Header */}
-          <div className="bg-gray-100 px-4 py-2 border-b border-gray-300 grid grid-cols-12 gap-2 font-semibold text-xs text-gray-700">
+          <div className="bg-gray-50 px-5 py-2.5 border-b border-gray-200 grid grid-cols-12 gap-3 font-semibold text-xs text-gray-600 uppercase tracking-wider">
             <div className="col-span-5">Article</div>
-            <div className="col-span-2 text-center">Qte</div>
-            <div className="col-span-3 text-right">Px Total</div>
-            <div className="col-span-2 text-right">%</div>
+            <div className="col-span-2 text-center">Qté</div>
+            <div className="col-span-3 text-right">Total</div>
+            <div className="col-span-2 text-right">-</div>
           </div>
 
           {/* Items List */}
           <div className="flex-1 overflow-auto bg-white">
             {selectedOrderForPayment && selectedOrderForPayment.items.length > 0 ? (
-              <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-gray-100">
                 {selectedOrderForPayment.items.map(item => (
-                  <div key={item.id} className="px-4 py-2 grid grid-cols-12 gap-2 hover:bg-cyan-50 text-sm">
+                  <div key={item.id} className="px-5 py-3 grid grid-cols-12 gap-3 hover:bg-gray-50 text-sm">
                     <div className="col-span-5">
-                      <p className="font-bold text-cyan-700">{item.productName}</p>
+                      <p className="font-semibold text-gray-900">{item.productName}</p>
                       {item.size && (
-                        <p className="text-xs text-gray-600">{item.size}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{item.size}</p>
                       )}
                     </div>
-                    <div className="col-span-2 text-center font-bold text-gray-900">{item.quantity}</div>
-                    <div className="col-span-3 text-right font-bold text-gray-900">{(item.price * item.quantity).toLocaleString('fr-FR')}</div>
-                    <div className="col-span-2 text-right font-bold text-gray-900">-</div>
+                    <div className="col-span-2 text-center font-semibold text-gray-700">{item.quantity}</div>
+                    <div className="col-span-3 text-right font-semibold text-gray-900">
+                      {(item.price * item.quantity).toLocaleString('fr-FR')}
+                    </div>
+                    <div className="col-span-2"></div>
                   </div>
                 ))}
               </div>
             ) : cart.length > 0 ? (
-              <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-gray-100">
                 {cart.map(item => (
-                  <div key={item.id} className="px-4 py-2 grid grid-cols-12 gap-2 hover:bg-cyan-50 text-sm">
+                  <div key={item.id} className="px-5 py-3 grid grid-cols-12 gap-3 hover:bg-gray-50 text-sm">
                     <div className="col-span-5">
-                      <p className="font-bold text-cyan-700">{item.productName}</p>
+                      <p className="font-semibold text-gray-900">{item.productName}</p>
                       {item.size && (
-                        <p className="text-xs text-gray-600">{item.size}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{item.size}</p>
                       )}
                     </div>
                     <div className="col-span-2 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-5 h-5 bg-gray-200 hover:bg-gray-300 rounded flex items-center justify-center"
+                          className="w-6 h-6 bg-gray-100 hover:bg-red-100 hover:text-red-600 text-gray-600 rounded transition-all flex items-center justify-center"
                         >
                           <Minus className="h-3 w-3" />
                         </button>
-                        <span className="font-bold text-gray-900 w-6 text-center">{item.quantity}</span>
+                        <span className="font-semibold text-gray-900 w-8 text-center">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-5 h-5 bg-gray-200 hover:bg-gray-300 rounded flex items-center justify-center"
+                          className="w-6 h-6 bg-gray-100 hover:bg-green-100 hover:text-green-600 text-gray-600 rounded transition-all flex items-center justify-center"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
                       </div>
                     </div>
-                    <div className="col-span-3 text-right font-bold text-gray-900">{(item.price * item.quantity).toLocaleString('fr-FR')}</div>
-                    <div className="col-span-2 text-right font-bold text-gray-900">-</div>
+                    <div className="col-span-3 text-right font-semibold text-gray-900">
+                      {(item.price * item.quantity).toLocaleString('fr-FR')}
+                    </div>
+                    <div className="col-span-2 flex justify-end">
+                      <button
+                        onClick={() => removeFromCart(item.id)}
+                        className="text-gray-400 hover:text-red-600 transition-all"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-400">
                 <div className="text-center">
-                  <ShoppingCart className="h-16 w-16 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">Aucun article</p>
+                  <ShoppingCart className="h-16 w-16 mx-auto mb-3 opacity-20" />
+                  <p className="text-sm font-medium">Aucun article</p>
+                  <p className="text-xs mt-1">Sélectionnez une table et ajoutez des produits</p>
                 </div>
               </div>
             )}
           </div>
 
           {/* Action Buttons */}
-          <div className="border-t border-gray-300 px-4 py-3 bg-white">
-            <div className="grid grid-cols-5 gap-2 mb-3">
-              <button
-                onClick={() => updateQuantity(cart[cart.length - 1]?.id, (cart[cart.length - 1]?.quantity || 0) + 1)}
-                disabled={cart.length === 0}
-                className="px-2 py-3 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1 disabled:opacity-50"
-              >
-                <Calculator className="h-7 w-7 text-gray-700" />
-                <span className="text-xs font-semibold text-gray-700">Quantité</span>
-              </button>
-              <button
-                onClick={clearCart}
-                className="px-2 py-3 bg-white border-2 border-red-300 rounded-lg hover:bg-red-50 transition-all flex flex-col items-center gap-1"
-              >
-                <X className="h-7 w-7 text-red-600" />
-                <span className="text-xs font-semibold text-red-600">Supprimer</span>
-              </button>
-              <button
-                disabled={cart.length === 0}
-                className="px-2 py-3 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1 disabled:opacity-50"
-              >
-                <RotateCcw className="h-7 w-7 text-gray-700" />
-                <span className="text-xs font-semibold text-gray-700">Remise</span>
-              </button>
-              <button
-                disabled={cart.length === 0}
-                className="px-2 py-3 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1 disabled:opacity-50"
-              >
-                <MessageSquare className="h-7 w-7 text-gray-700" />
-                <span className="text-xs font-semibold text-gray-700">Remarque</span>
-              </button>
-              <button
-                disabled={cart.length === 0}
-                className="px-2 py-3 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1 disabled:opacity-50"
-              >
-                <Scale className="h-7 w-7 text-gray-700" />
-                <span className="text-xs font-semibold text-gray-700">Peser</span>
-              </button>
-            </div>
-
-            {/* Up/Down Arrows */}
-            <div className="flex justify-center gap-4 mb-3">
-              <button className="w-12 h-12 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center">
-                <Plus className="h-8 w-8 text-gray-700" />
-              </button>
-              <button className="w-12 h-12 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center">
-                <Minus className="h-8 w-8 text-gray-700" />
-              </button>
-            </div>
-
+          <div className="border-t border-gray-200 px-5 py-4 bg-gray-50 space-y-3">
             {/* Clock */}
-            <div className="mb-3 text-center">
-              <div className="inline-block bg-gradient-to-r from-cyan-500 to-teal-500 px-6 py-2 rounded-lg">
-                <div className="text-3xl font-bold text-white font-mono tracking-wider">
+            <div className="text-center">
+              <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
+                <Clock className="h-4 w-4 text-gray-500" />
+                <div className="text-lg font-mono font-bold text-gray-900">
                   {formatTime(currentTime)}
                 </div>
               </div>
             </div>
 
-            {/* Main Actions */}
-            <div className="grid grid-cols-4 gap-2 mb-3">
+            {/* Quick Actions */}
+            <div className="grid grid-cols-4 gap-2">
               <button
-                onClick={() => {
-                  if (selectedCustomer) {
-                    alert('Client: ' + selectedCustomer.name);
-                  } else {
-                    alert('Aucun client sélectionné');
-                  }
-                }}
-                className="px-3 py-5 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-xl hover:from-cyan-600 hover:to-cyan-700 transition-all shadow-lg flex flex-col items-center gap-2"
-              >
-                <User className="h-10 w-10" />
-                <span className="text-sm font-bold">Client</span>
-              </button>
-              <button
-                onClick={() => setViewMode('products')}
-                className="px-3 py-5 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all shadow-lg flex flex-col items-center gap-2"
-              >
-                <Clock className="h-10 w-10" />
-                <span className="text-sm font-bold">A Suivre..</span>
-              </button>
-              <button
-                onClick={printBill}
+                onClick={clearCart}
                 disabled={cart.length === 0}
-                className="px-3 py-5 bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all shadow-lg flex flex-col items-center gap-2 disabled:opacity-50"
+                className="px-3 py-3 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Minus className="h-10 w-10" />
-                <span className="text-sm font-bold">Séparateur</span>
+                <X className="h-5 w-5" />
+                <span className="text-xs font-medium">Annuler</span>
+              </button>
+              <button
+                disabled={cart.length === 0}
+                className="px-3 py-3 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Tag className="h-5 w-5" />
+                <span className="text-xs font-medium">Remise</span>
+              </button>
+              <button
+                disabled={cart.length === 0}
+                className="px-3 py-3 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all flex flex-col items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <MessageSquare className="h-5 w-5" />
+                <span className="text-xs font-medium">Note</span>
               </button>
               <button
                 onClick={sendOrderToPrinters}
                 disabled={cart.length === 0 || !selectedTableId}
-                className="px-3 py-5 bg-gradient-to-br from-pink-500 to-pink-600 text-white rounded-xl hover:from-pink-600 hover:to-pink-700 transition-all shadow-lg flex flex-col items-center gap-2 disabled:opacity-50"
+                className="px-3 py-3 bg-orange-500 border border-orange-600 text-white rounded-lg hover:bg-orange-600 transition-all flex flex-col items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
               >
-                <Wifi className="h-10 w-10" />
-                <span className="text-sm font-bold">Fabrication</span>
+                <Printer className="h-5 w-5" />
+                <span className="text-xs font-medium">Envoyer</span>
               </button>
-            </div>
-
-            {/* Code article search */}
-            <div className="mb-3">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Code article"
-                  className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-cyan-500"
-                />
-                <button className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-all">
-                  <Search className="h-5 w-5" />
-                </button>
-              </div>
             </div>
 
             {/* Total */}
-            <div className="bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-xl px-6 py-3 mb-3 flex items-center justify-between shadow-lg">
-              <div className="text-white text-6xl font-bold">
-                {total.toLocaleString('fr-FR')} CFA
+            <div className="bg-white border-2 border-blue-600 rounded-xl p-5 shadow-sm">
+              <div className="flex items-baseline justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">Total à payer</span>
+                <span className="text-xs text-gray-500">{cart.length} article{cart.length > 1 ? 's' : ''}</span>
               </div>
-              <div className="text-white text-2xl font-bold">
-                {cart.length}
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-gray-900">
+                  {total.toLocaleString('fr-FR')}
+                </span>
+                <span className="text-lg font-semibold text-gray-500">CFA</span>
               </div>
+              {subtotal > 0 && (
+                <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-xs text-gray-500">
+                  <span>Sous-total: {subtotal.toLocaleString('fr-FR')}</span>
+                  <span>TVA: {tax.toLocaleString('fr-FR')}</span>
+                </div>
+              )}
             </div>
 
             {/* Bottom Actions */}
-            <div className="grid grid-cols-4 gap-2">
-              <button
-                className="px-3 py-5 bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all shadow-lg flex flex-col items-center gap-2"
-              >
-                <ShoppingCart className="h-9 w-9" />
-                <span className="text-xs font-bold">Sur place</span>
-              </button>
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={openCashDrawer}
-                className="px-3 py-5 bg-gradient-to-br from-cyan-600 to-cyan-700 text-white rounded-xl hover:from-cyan-700 hover:to-cyan-800 transition-all shadow-lg flex flex-col items-center gap-2"
+                className="px-4 py-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
               >
-                <DollarSign className="h-9 w-9" />
-                <span className="text-xs font-bold">Tiroir</span>
-              </button>
-              <button
-                disabled={cart.length === 0}
-                className="px-3 py-5 bg-gradient-to-br from-amber-600 to-amber-700 text-white rounded-xl hover:from-amber-700 hover:to-amber-800 transition-all shadow-lg flex flex-col items-center gap-2 disabled:opacity-50"
-              >
-                <Clock className="h-9 w-9" />
-                <span className="text-xs font-bold">Attente</span>
+                <DollarSign className="h-5 w-5" />
+                <span className="text-sm font-medium">Tiroir</span>
               </button>
               <button
                 onClick={processPayment}
                 disabled={(cart.length === 0 && !selectedOrderForPayment)}
-                className="px-3 py-5 bg-gradient-to-br from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg flex flex-col items-center gap-2 disabled:opacity-50"
+                className="px-4 py-4 bg-green-600 border border-green-700 text-white rounded-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
               >
-                <Tag className="h-9 w-9" />
-                <span className="text-xs font-bold">Paiement</span>
+                <CreditCard className="h-5 w-5" />
+                <span className="text-sm font-medium">Paiement</span>
               </button>
             </div>
           </div>
