@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { Table } from '../types';
-import { mockTables } from '../data/mockData';
+import { supabase } from '../lib/supabase';
 
 interface TableContextType {
   tables: Table[];
@@ -24,87 +24,115 @@ export const useTables = () => {
 };
 
 export const useTableProvider = () => {
-  const [tables, setTables] = useState<Table[]>(mockTables);
+  const [tables, setTables] = useState<Table[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Chargement initial des données
+  // Chargement initial des données depuis Supabase
   useEffect(() => {
     if (!isInitialized) {
       console.log('useTables - Initialisation du hook');
-      
-      const storedTables = localStorage.getItem('restobar_tables');
-      if (storedTables) {
+
+      const loadTables = async () => {
         try {
-          const parsedTables = JSON.parse(storedTables);
-          if (Array.isArray(parsedTables)) {
-            setTables(parsedTables);
-            console.log('useTables - Tables chargées depuis localStorage:', parsedTables.length);
+          const { data, error } = await supabase
+            .from('tables')
+            .select('*')
+            .order('number', { ascending: true });
+
+          if (error) {
+            console.error('Erreur lors du chargement des tables:', error);
+            setTables([]);
+          } else if (data) {
+            const formattedTables: Table[] = data.map((t: any) => ({
+              id: t.id,
+              number: t.number,
+              capacity: t.capacity,
+              section: t.section,
+              status: t.status,
+            }));
+            setTables(formattedTables);
+            console.log('useTables - Tables chargées depuis Supabase:', formattedTables.length);
           }
         } catch (error) {
           console.error('useTables - Erreur lors du chargement des tables:', error);
-          setTables(mockTables);
+          setTables([]);
+        } finally {
+          setIsInitialized(true);
         }
-      }
-      
-      setIsInitialized(true);
+      };
+
+      loadTables();
     }
   }, [isInitialized]);
 
-  // Sauvegarder automatiquement les tables
-  useEffect(() => {
-    if (isInitialized && tables.length > 0) {
-      try {
-        const tablesJson = JSON.stringify(tables);
-        const currentStored = localStorage.getItem('restobar_tables');
-        
-        if (currentStored !== tablesJson) {
-          localStorage.setItem('restobar_tables', tablesJson);
-          console.log('useTables - Tables sauvegardées automatiquement:', tables.length);
-        }
-      } catch (error) {
-        console.error('useTables - Erreur lors de la sauvegarde des tables:', error);
-      }
-    }
-  }, [tables, isInitialized]);
-
-  const addTable = (tableData: Omit<Table, 'id'>) => {
+  const addTable = async (tableData: Omit<Table, 'id'>) => {
     try {
-      const newTable: Table = {
-        ...tableData,
-        id: Date.now().toString(),
-      };
-      
-      setTables(prev => {
-        const updatedTables = [...prev, newTable];
-        console.log('useTables - Nouvelle table ajoutée:', newTable.number, 'Total:', updatedTables.length);
-        return updatedTables;
-      });
+      const { data, error } = await supabase.from('tables').insert([
+        {
+          number: tableData.number,
+          capacity: tableData.capacity,
+          section: tableData.section,
+          status: tableData.status,
+        },
+      ]).select();
+
+      if (error) {
+        console.error('Erreur lors de l\'ajout de la table:', error);
+      } else if (data && data[0]) {
+        const newTable: Table = {
+          id: data[0].id,
+          number: data[0].number,
+          capacity: data[0].capacity,
+          section: data[0].section,
+          status: data[0].status,
+        };
+        setTables(prev => [...prev, newTable]);
+        console.log('useTables - Nouvelle table ajoutée:', newTable.number);
+      }
     } catch (error) {
       console.error('useTables - Erreur lors de l\'ajout de la table:', error);
     }
   };
 
-  const updateTable = (id: string, tableData: Partial<Table>) => {
+  const updateTable = async (id: string, tableData: Partial<Table>) => {
     try {
-      setTables(prev => {
-        const updatedTables = prev.map(t => 
+      const updateData: any = {};
+      if (tableData.number !== undefined) updateData.number = tableData.number;
+      if (tableData.capacity !== undefined) updateData.capacity = tableData.capacity;
+      if (tableData.section !== undefined) updateData.section = tableData.section;
+      if (tableData.status !== undefined) updateData.status = tableData.status;
+
+      const { error } = await supabase
+        .from('tables')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erreur lors de la mise à jour de la table:', error);
+      } else {
+        setTables(prev => prev.map(t =>
           t.id === id ? { ...t, ...tableData } : t
-        );
+        ));
         console.log('useTables - Table mise à jour:', id);
-        return updatedTables;
-      });
+      }
     } catch (error) {
       console.error('useTables - Erreur lors de la mise à jour de la table:', error);
     }
   };
 
-  const deleteTable = (id: string) => {
+  const deleteTable = async (id: string) => {
     try {
-      setTables(prev => {
-        const updatedTables = prev.filter(t => t.id !== id);
-        console.log('useTables - Table supprimée, Total restant:', updatedTables.length);
-        return updatedTables;
-      });
+      const { error } = await supabase
+        .from('tables')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erreur lors de la suppression de la table:', error);
+      } else {
+        setTables(prev => prev.filter(t => t.id !== id));
+        console.log('useTables - Table supprimée');
+      }
     } catch (error) {
       console.error('useTables - Erreur lors de la suppression de la table:', error);
     }
