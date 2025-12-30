@@ -163,9 +163,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
       {/* Upload d'image */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Image du produit
+          Image du produit <span className="text-gray-400 font-normal">(optionnelle)</span>
         </label>
-        
+
         {imagePreview ? (
           <div className="relative inline-block">
             <img
@@ -182,13 +182,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
             </button>
           </div>
         ) : (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+          <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
             <Upload className="h-12 w-12 text-gray-400 mx-auto mb-2" />
             <p className="text-sm text-gray-600 mb-2">
               Cliquez pour ajouter une image ou glissez-déposez
             </p>
             <p className="text-xs text-gray-500">
-              PNG, JPG, GIF jusqu'à 5MB
+              PNG, JPG, GIF jusqu'à 5MB (optionnel)
             </p>
             <input
               type="file"
@@ -198,6 +198,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
             />
           </div>
         )}
+        <p className="text-xs text-gray-500 mt-2">
+          Vous pouvez créer un produit sans image et l'ajouter plus tard
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

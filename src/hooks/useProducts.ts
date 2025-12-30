@@ -78,6 +78,7 @@ export const useProductProvider = () => {
               description: c.description || '',
               icon: 'utensils',
               isActive: c.is_active,
+              printer: c.printer,
             }));
             setCategories(formattedCategories);
             console.log('useProducts - Catégories chargées depuis Supabase:', formattedCategories.length);
@@ -190,6 +191,7 @@ export const useProductProvider = () => {
           name: categoryData.name,
           description: categoryData.description,
           is_active: categoryData.isActive,
+          printer: categoryData.printer,
         },
       ]).select();
 
@@ -202,6 +204,7 @@ export const useProductProvider = () => {
           description: data[0].description || '',
           icon: 'utensils',
           isActive: data[0].is_active,
+          printer: data[0].printer,
         };
         setCategories(prev => [...prev, newCategory]);
         console.log('useProducts - Nouvelle catégorie ajoutée:', newCategory.name);
@@ -219,6 +222,7 @@ export const useProductProvider = () => {
           name: categoryData.name,
           description: categoryData.description,
           is_active: categoryData.isActive,
+          printer: categoryData.printer,
         })
         .eq('id', id);
 
