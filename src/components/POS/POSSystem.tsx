@@ -409,7 +409,7 @@ const POSSystem: React.FC = () => {
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-[500px] bg-white border-l border-gray-200 flex flex-col">
+        <div className="w-[700px] bg-white border-l border-gray-200 flex flex-col">
           {/* Header */}
           <div className="bg-blue-600 px-5 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -437,69 +437,77 @@ const POSSystem: React.FC = () => {
           </div>
 
           {/* Items List Header */}
-          <div className="bg-gray-50 px-5 py-2.5 border-b border-gray-200 grid grid-cols-12 gap-3 font-semibold text-xs text-gray-600 uppercase tracking-wider">
-            <div className="col-span-5">Article</div>
-            <div className="col-span-2 text-center">Qté</div>
-            <div className="col-span-3 text-right">Total</div>
-            <div className="col-span-2 text-right">-</div>
+          <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 flex items-center gap-4 font-semibold text-sm text-gray-600 uppercase tracking-wider">
+            <div className="flex-1">Article</div>
+            <div className="w-28 text-center">Quantité</div>
+            <div className="w-32 text-right">Prix Total</div>
+            <div className="w-10"></div>
           </div>
 
           {/* Items List */}
           <div className="flex-1 overflow-auto bg-white">
             {selectedOrderForPayment && selectedOrderForPayment.items.length > 0 ? (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-200">
                 {selectedOrderForPayment.items.map(item => (
-                  <div key={item.id} className="px-5 py-3 grid grid-cols-12 gap-3 hover:bg-gray-50 text-sm">
-                    <div className="col-span-5">
-                      <p className="font-semibold text-gray-900">{item.productName}</p>
+                  <div key={item.id} className="px-6 py-4 flex items-center gap-4 hover:bg-gray-50">
+                    <div className="flex-1">
+                      <p className="font-semibold text-base text-gray-900">{item.productName}</p>
                       {item.size && (
-                        <p className="text-xs text-gray-500 mt-0.5">{item.size}</p>
+                        <p className="text-sm text-gray-500 mt-0.5">{item.size}</p>
                       )}
+                      <p className="text-sm text-gray-600 mt-1">{item.price.toLocaleString('fr-FR')} CFA</p>
                     </div>
-                    <div className="col-span-2 text-center font-semibold text-gray-700">{item.quantity}</div>
-                    <div className="col-span-3 text-right font-semibold text-gray-900">
-                      {(item.price * item.quantity).toLocaleString('fr-FR')}
+                    <div className="w-28 text-center font-bold text-base text-gray-700">{item.quantity}</div>
+                    <div className="w-32 text-right">
+                      <p className="font-bold text-lg text-gray-900">
+                        {(item.price * item.quantity).toLocaleString('fr-FR')}
+                      </p>
+                      <p className="text-sm text-gray-500">CFA</p>
                     </div>
-                    <div className="col-span-2"></div>
+                    <div className="w-10"></div>
                   </div>
                 ))}
               </div>
             ) : cart.length > 0 ? (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-200">
                 {cart.map(item => (
-                  <div key={item.id} className="px-5 py-3 grid grid-cols-12 gap-3 hover:bg-gray-50 text-sm">
-                    <div className="col-span-5">
-                      <p className="font-semibold text-gray-900">{item.productName}</p>
+                  <div key={item.id} className="px-6 py-4 flex items-center gap-4 hover:bg-gray-50">
+                    <div className="flex-1">
+                      <p className="font-semibold text-base text-gray-900">{item.productName}</p>
                       {item.size && (
-                        <p className="text-xs text-gray-500 mt-0.5">{item.size}</p>
+                        <p className="text-sm text-gray-500 mt-0.5">{item.size}</p>
                       )}
+                      <p className="text-sm text-gray-600 mt-1">{item.price.toLocaleString('fr-FR')} CFA</p>
                     </div>
-                    <div className="col-span-2 text-center">
-                      <div className="flex items-center justify-center gap-1">
+                    <div className="w-28">
+                      <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-6 h-6 bg-gray-100 hover:bg-red-100 hover:text-red-600 text-gray-600 rounded transition-all flex items-center justify-center"
+                          className="w-8 h-8 bg-gray-200 hover:bg-red-100 hover:text-red-600 text-gray-700 rounded-lg transition-all flex items-center justify-center"
                         >
-                          <Minus className="h-3 w-3" />
+                          <Minus className="h-4 w-4" />
                         </button>
-                        <span className="font-semibold text-gray-900 w-8 text-center">{item.quantity}</span>
+                        <span className="font-bold text-base text-gray-900 w-10 text-center">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-6 h-6 bg-gray-100 hover:bg-green-100 hover:text-green-600 text-gray-600 rounded transition-all flex items-center justify-center"
+                          className="w-8 h-8 bg-gray-200 hover:bg-green-100 hover:text-green-600 text-gray-700 rounded-lg transition-all flex items-center justify-center"
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-4 w-4" />
                         </button>
                       </div>
                     </div>
-                    <div className="col-span-3 text-right font-semibold text-gray-900">
-                      {(item.price * item.quantity).toLocaleString('fr-FR')}
+                    <div className="w-32 text-right">
+                      <p className="font-bold text-lg text-gray-900">
+                        {(item.price * item.quantity).toLocaleString('fr-FR')}
+                      </p>
+                      <p className="text-sm text-gray-500">CFA</p>
                     </div>
-                    <div className="col-span-2 flex justify-end">
+                    <div className="w-10 flex justify-end">
                       <button
                         onClick={() => removeFromCart(item.id)}
-                        className="text-gray-400 hover:text-red-600 transition-all"
+                        className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-5 w-5" />
                       </button>
                     </div>
                   </div>
@@ -517,81 +525,80 @@ const POSSystem: React.FC = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="border-t border-gray-200 px-5 py-4 bg-gray-50 space-y-3">
-            {/* Clock */}
-            <div className="text-center">
-              <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
-                <Clock className="h-4 w-4 text-gray-500" />
-                <div className="text-lg font-mono font-bold text-gray-900">
-                  {formatTime(currentTime)}
+          <div className="border-t-2 border-gray-200 bg-white">
+            {/* Total Section */}
+            <div className="px-6 py-5 bg-gradient-to-br from-blue-50 to-blue-100 border-b-2 border-blue-200">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Total à payer</span>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Clock className="h-4 w-4" />
+                  <span className="text-sm font-mono font-semibold">{formatTime(currentTime)}</span>
+                </div>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <div className="text-5xl font-bold text-gray-900">
+                    {total.toLocaleString('fr-FR')}
+                  </div>
+                  <div className="text-lg font-semibold text-gray-600 mt-1">CFA</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-gray-600">{cart.length} article{cart.length > 1 ? 's' : ''}</div>
+                  {subtotal > 0 && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      TVA: {tax.toLocaleString('fr-FR')} CFA
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={clearCart}
-                disabled={cart.length === 0}
-                className="px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-red-50 hover:border-red-300 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Trash2 className="h-5 w-5" />
-                <span className="text-sm font-medium">Vider panier</span>
-              </button>
-              <button
-                onClick={sendOrderToPrinters}
-                disabled={cart.length === 0 || !selectedTableId}
-                className="px-4 py-3 bg-orange-500 border border-orange-600 text-white rounded-lg hover:bg-orange-600 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-              >
-                <Printer className="h-5 w-5" />
-                <span className="text-sm font-medium">Envoyer</span>
-              </button>
-            </div>
-
-            {/* Total */}
-            <div className="bg-white border-2 border-blue-600 rounded-xl p-5 shadow-sm">
-              <div className="flex items-baseline justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">Total à payer</span>
-                <span className="text-xs text-gray-500">{cart.length} article{cart.length > 1 ? 's' : ''}</span>
+            {/* Action Buttons */}
+            <div className="px-6 py-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={clearCart}
+                  disabled={cart.length === 0}
+                  className="px-5 py-4 bg-gray-100 hover:bg-red-50 border-2 border-gray-300 hover:border-red-400 text-gray-700 hover:text-red-700 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed font-semibold"
+                >
+                  <Trash2 className="h-5 w-5" />
+                  <span>Vider</span>
+                </button>
+                <button
+                  onClick={sendOrderToPrinters}
+                  disabled={cart.length === 0 || !selectedTableId}
+                  className="px-5 py-4 bg-orange-500 hover:bg-orange-600 border-2 border-orange-600 text-white rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-md font-semibold"
+                >
+                  <Printer className="h-5 w-5" />
+                  <span>Envoyer</span>
+                </button>
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-gray-900">
-                  {total.toLocaleString('fr-FR')}
-                </span>
-                <span className="text-lg font-semibold text-gray-500">CFA</span>
-              </div>
-              {subtotal > 0 && (
-                <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-xs text-gray-500">
-                  <span>Sous-total: {subtotal.toLocaleString('fr-FR')}</span>
-                  <span>TVA: {tax.toLocaleString('fr-FR')}</span>
-                </div>
-              )}
-            </div>
 
-            {/* Bottom Actions */}
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={printBill}
-                disabled={cart.length === 0 && !selectedOrderForPayment}
-                className="px-4 py-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Receipt className="h-5 w-5" />
-                <span className="text-sm font-medium">Addition</span>
-              </button>
-              <button
-                onClick={openCashDrawer}
-                className="px-4 py-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
-              >
-                <DollarSign className="h-5 w-5" />
-                <span className="text-sm font-medium">Tiroir</span>
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={printBill}
+                  disabled={cart.length === 0 && !selectedOrderForPayment}
+                  className="px-5 py-4 bg-white hover:bg-blue-50 border-2 border-gray-300 hover:border-blue-400 text-gray-700 hover:text-blue-700 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed font-semibold"
+                >
+                  <Receipt className="h-5 w-5" />
+                  <span>Addition</span>
+                </button>
+                <button
+                  onClick={openCashDrawer}
+                  className="px-5 py-4 bg-white hover:bg-gray-50 border-2 border-gray-300 text-gray-700 rounded-xl transition-all flex items-center justify-center gap-2 font-semibold"
+                >
+                  <DollarSign className="h-5 w-5" />
+                  <span>Tiroir</span>
+                </button>
+              </div>
+
               <button
                 onClick={processPayment}
                 disabled={(cart.length === 0 && !selectedOrderForPayment)}
-                className="px-4 py-4 bg-green-600 border border-green-700 text-white rounded-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                className="w-full px-6 py-5 bg-green-600 hover:bg-green-700 border-2 border-green-700 text-white rounded-xl transition-all flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg font-bold text-lg"
               >
-                <CreditCard className="h-5 w-5" />
-                <span className="text-sm font-medium">Paiement</span>
+                <CreditCard className="h-6 w-6" />
+                <span>ENCAISSER</span>
               </button>
             </div>
           </div>
