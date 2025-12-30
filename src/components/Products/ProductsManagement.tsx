@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Edit, Trash2, Printer } from 'lucide-react';
+import { Plus, Search, Filter, Edit, Trash2, Printer, X, Copy, Grid3x3, Star, Edit3, Keyboard, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -26,10 +26,14 @@ const ProductsManagement: React.FC = () => {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [searchField, setSearchField] = useState('code');
 
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = searchField === 'code'
+      ? product.id.toLowerCase().includes(searchTerm.toLowerCase())
+      : product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -39,9 +43,15 @@ const ProductsManagement: React.FC = () => {
     setIsProductModalOpen(true);
   };
 
-  const handleEditProduct = (product: any) => {
-    setEditingProduct(product);
-    setIsProductModalOpen(true);
+  const handleEditProduct = (product?: any) => {
+    if (product) {
+      setEditingProduct(product);
+      setIsProductModalOpen(true);
+    } else if (selectedProducts.length === 1) {
+      const productToEdit = products.find(p => p.id === selectedProducts[0]);
+      setEditingProduct(productToEdit);
+      setIsProductModalOpen(true);
+    }
   };
 
   const handleSaveProduct = (productData: any) => {
@@ -54,277 +64,227 @@ const ProductsManagement: React.FC = () => {
     setEditingProduct(null);
   };
 
-  const handleDeleteProduct = (productId: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
-      deleteProduct(productId);
+  const handleDeleteProduct = () => {
+    if (selectedProducts.length === 0) return;
+    if (confirm(`Êtes-vous sûr de vouloir supprimer ${selectedProducts.length} produit(s) ?`)) {
+      selectedProducts.forEach(id => deleteProduct(id));
+      setSelectedProducts([]);
     }
   };
 
-  const handleCreateCategory = () => {
-    setEditingCategory(null);
-    setIsCategoryModalOpen(true);
-  };
-
-  const handleEditCategory = (category: any) => {
-    setEditingCategory(category);
-    setIsCategoryModalOpen(true);
-  };
-
-  const handleSaveCategory = (categoryData: any) => {
-    if (editingCategory) {
-      updateCategory(editingCategory.id, categoryData);
-    } else {
-      addCategory(categoryData);
-    }
-    setIsCategoryModalOpen(false);
-    setEditingCategory(null);
-  };
-
-  const handleDeleteCategory = (categoryId: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
-      deleteCategory(categoryId);
+  const handleDuplicateProduct = () => {
+    if (selectedProducts.length === 1) {
+      const productToDuplicate = products.find(p => p.id === selectedProducts[0]);
+      if (productToDuplicate) {
+        const duplicatedProduct = {
+          ...productToDuplicate,
+          name: `${productToDuplicate.name} (Copie)`,
+        };
+        delete duplicatedProduct.id;
+        addProduct(duplicatedProduct);
+        setSelectedProducts([]);
+      }
     }
   };
 
-  const getPrinterIcon = (printer: string) => {
-    return <Printer className={`h-4 w-4 ${
-      printer === 'cuisine' ? 'text-orange-500' : 
-      printer === 'bar' ? 'text-blue-500' : 
-      'text-gray-500'
-    }`} />;
+  const toggleProductSelection = (productId: string) => {
+    setSelectedProducts(prev =>
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
   };
 
-  const getPrinterText = (printer: string) => {
-    switch (printer) {
-      case 'cuisine': return 'Cuisine';
-      case 'bar': return 'Bar';
-      case 'caisse': return 'Caisse';
-      default: return 'Non défini';
-    }
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
-    <div className="space-y-6">
-      {/* En-tête avec actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gestion des produits</h2>
-          <p className="text-gray-600">Gérez vos produits, catégories et affectations d'imprimantes</p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={handleCreateCategory} variant="secondary" icon={Plus}>
-            Nouvelle catégorie
-          </Button>
-          <Button onClick={handleCreateProduct} icon={Plus}>
-            Nouveau produit
-          </Button>
+    <div className="flex flex-col h-screen bg-white">
+      {/* Header bleu */}
+      <div className="bg-blue-600 text-white px-4 py-3 flex items-center justify-between shadow-md">
+        <h1 className="text-lg font-semibold">Liste des produits</h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-2 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded transition-colors"
+          >
+            <Printer className="h-4 w-4" />
+            <span className="text-sm font-medium">Imprimer</span>
+          </button>
+          <button className="p-1.5 bg-blue-700 hover:bg-blue-800 rounded transition-colors">
+            <Keyboard className="h-5 w-5" />
+          </button>
+          <button className="p-1.5 bg-red-600 hover:bg-red-700 rounded transition-colors">
+            <X className="h-5 w-5" />
+          </button>
         </div>
       </div>
 
-      {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card padding="sm" className="text-center">
-          <div className="text-2xl font-bold text-gray-900">{products.length}</div>
-          <div className="text-sm text-gray-600">Total produits</div>
-        </Card>
-        <Card padding="sm" className="text-center">
-          <div className="text-2xl font-bold text-green-600">
-            {products.filter(p => p.isActive).length}
-          </div>
-          <div className="text-sm text-gray-600">Produits actifs</div>
-        </Card>
-        <Card padding="sm" className="text-center">
-          <div className="text-2xl font-bold text-blue-600">{categories.length}</div>
-          <div className="text-sm text-gray-600">Catégories</div>
-        </Card>
-        <Card padding="sm" className="text-center">
-          <div className="text-2xl font-bold text-amber-600">
-            {products.filter(p => (p.stock || 0) < 10).length}
-          </div>
-          <div className="text-sm text-gray-600">Stock faible</div>
-        </Card>
+      {/* Barre d'actions */}
+      <div className="bg-gray-200 px-4 py-2 flex items-center justify-between border-b border-gray-300">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCreateProduct}
+            className="flex items-center gap-2 px-4 py-1.5 bg-white border border-gray-400 rounded hover:bg-gray-50 transition-colors shadow-sm"
+          >
+            <Star className="h-4 w-4 text-gray-700" />
+            <span className="text-sm font-medium text-gray-700">Nouveau</span>
+          </button>
+          <button
+            onClick={() => handleEditProduct()}
+            disabled={selectedProducts.length !== 1}
+            className={`flex items-center gap-2 px-4 py-1.5 bg-white border border-gray-400 rounded transition-colors shadow-sm ${
+              selectedProducts.length === 1
+                ? 'hover:bg-gray-50'
+                : 'opacity-50 cursor-not-allowed'
+            }`}
+          >
+            <Edit3 className="h-4 w-4 text-gray-700" />
+            <span className="text-sm font-medium text-gray-700">Éditer</span>
+          </button>
+          <button
+            onClick={handleDeleteProduct}
+            disabled={selectedProducts.length === 0}
+            className={`flex items-center gap-2 px-4 py-1.5 bg-white border border-gray-400 rounded transition-colors shadow-sm ${
+              selectedProducts.length > 0
+                ? 'hover:bg-gray-50'
+                : 'opacity-50 cursor-not-allowed'
+            }`}
+          >
+            <X className="h-4 w-4 text-gray-700" />
+            <span className="text-sm font-medium text-gray-700">Supprimer</span>
+          </button>
+          <button
+            onClick={handleDuplicateProduct}
+            disabled={selectedProducts.length !== 1}
+            className={`flex items-center gap-2 px-4 py-1.5 bg-white border border-gray-400 rounded transition-colors shadow-sm ${
+              selectedProducts.length === 1
+                ? 'hover:bg-gray-50'
+                : 'opacity-50 cursor-not-allowed'
+            }`}
+          >
+            <Copy className="h-4 w-4 text-gray-700" />
+            <span className="text-sm font-medium text-gray-700">Dupliquer</span>
+          </button>
+        </div>
+        <button
+          onClick={() => setIsCategoryModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-1.5 bg-white border border-gray-400 rounded hover:bg-gray-50 transition-colors shadow-sm"
+        >
+          <Grid3x3 className="h-4 w-4 text-gray-700" />
+          <span className="text-sm font-medium text-gray-700">Gestion catégories</span>
+        </button>
       </div>
 
-      {/* Filtres et recherche */}
-      <Card>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              placeholder="Rechercher un produit..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              icon={Search}
-              iconPosition="left"
-            />
-          </div>
-          <div className="sm:w-48">
+      {/* Tableau */}
+      <div className="flex-1 overflow-auto">
+        <table className="w-full border-collapse">
+          <thead className="sticky top-0 bg-gray-200 z-10">
+            <tr className="border-b border-gray-300">
+              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-200 border-r border-gray-300 w-12">
+                <input
+                  type="checkbox"
+                  checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedProducts(filteredProducts.map(p => p.id));
+                    } else {
+                      setSelectedProducts([]);
+                    }
+                  }}
+                  className="rounded"
+                />
+              </th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-200 border-r border-gray-300 w-24">Code article</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-200 border-r border-gray-300 min-w-[200px]">Désignation</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-200 border-r border-gray-300 w-28">Prix vente</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-200 border-r border-gray-300 w-28">Px emporté</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-200 border-r border-gray-300 w-28">Prix achat</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-200 border-r border-gray-300 w-36">Catégorie</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-200 border-r border-gray-300 w-36">Sous catégorie</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-200 border-r border-gray-300 w-24">Qte stock</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-200 border-r border-gray-300 w-24">Qte Min.</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-200 border-r border-gray-300 w-36">Fournisseur</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-200 w-36">Ref art fourni</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredProducts.map((product, index) => (
+              <tr
+                key={product.id}
+                className={`border-b border-gray-200 hover:bg-blue-50 cursor-pointer ${
+                  index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                } ${selectedProducts.includes(product.id) ? 'bg-blue-100' : ''}`}
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).tagName !== 'INPUT') {
+                    toggleProductSelection(product.id);
+                  }
+                }}
+              >
+                <td className="px-3 py-2 border-r border-gray-200">
+                  <input
+                    type="checkbox"
+                    checked={selectedProducts.includes(product.id)}
+                    onChange={() => toggleProductSelection(product.id)}
+                    className="rounded"
+                  />
+                </td>
+                <td className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200">{product.id.slice(0, 8)}</td>
+                <td className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 font-medium">{product.name}</td>
+                <td className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 text-right">{product.price.toLocaleString('fr-FR')}</td>
+                <td className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 text-right">{product.price.toLocaleString('fr-FR')}</td>
+                <td className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 text-right">{Math.floor(product.price * 0.6).toLocaleString('fr-FR')}</td>
+                <td className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200">{product.category}</td>
+                <td className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200">{product.printer || 'NON DÉFINI'}</td>
+                <td className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 text-right">{product.stock || 0}</td>
+                <td className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 text-right">{product.minStock || 0}</td>
+                <td className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200">{product.supplier || ''}</td>
+                <td className="px-3 py-2 text-sm text-gray-900">{product.supplierRef || ''}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Barre de recherche en bas */}
+      <div className="bg-gray-100 border-t border-gray-300 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-700 font-medium">Recherche par :</span>
             <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchField}
+              onChange={(e) => setSearchField(e.target.value)}
+              className="px-3 py-1.5 border border-gray-400 rounded bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">Toutes les catégories</option>
-              {categories.map(category => (
-                <option key={category.id} value={category.name}>
-                  {category.name}
-                </option>
-              ))}
+              <option value="code">Code article</option>
+              <option value="name">Désignation</option>
             </select>
           </div>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="mot contenu"
+            className="px-3 py-1.5 border border-gray-400 rounded bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+          />
         </div>
-      </Card>
 
-      {/* Gestion des catégories */}
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Catégories</h3>
-          <Button onClick={handleCreateCategory} size="sm" icon={Plus}>
-            Ajouter
-          </Button>
+        <div className="flex items-center gap-2">
+          <button className="p-1.5 bg-white border border-gray-400 rounded hover:bg-gray-50 transition-colors">
+            <ChevronsLeft className="h-4 w-4 text-gray-700" />
+          </button>
+          <button className="p-1.5 bg-white border border-gray-400 rounded hover:bg-gray-50 transition-colors">
+            <ChevronLeft className="h-4 w-4 text-gray-700" />
+          </button>
+          <button className="p-1.5 bg-white border border-gray-400 rounded hover:bg-gray-50 transition-colors">
+            <ChevronRight className="h-4 w-4 text-gray-700" />
+          </button>
+          <button className="p-1.5 bg-white border border-gray-400 rounded hover:bg-gray-50 transition-colors">
+            <ChevronsRight className="h-4 w-4 text-gray-700" />
+          </button>
         </div>
-        
-        {categories.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p className="text-lg font-medium">Aucune catégorie</p>
-            <p className="text-sm">Créez votre première catégorie pour organiser vos produits</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {categories.map(category => (
-              <div key={category.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">{category.name}</p>
-                  <p className="text-sm text-gray-600">{category.description}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {products.filter(p => p.category === category.name).length} produits
-                  </p>
-                </div>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => handleEditCategory(category)}
-                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteCategory(category.id)}
-                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {/* Liste des produits */}
-      <Card>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Produits ({filteredProducts.length})
-        </h3>
-        
-        {filteredProducts.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            <div className="text-6xl mb-4">🍽️</div>
-            <h4 className="text-lg font-medium mb-2">
-              {products.length === 0 ? 'Aucun produit' : 'Aucun produit trouvé'}
-            </h4>
-            <p className="text-sm mb-4">
-              {products.length === 0 
-                ? 'Créez votre premier produit pour commencer à vendre'
-                : 'Modifiez vos filtres ou créez un nouveau produit'
-              }
-            </p>
-            <Button onClick={handleCreateProduct} icon={Plus}>
-              Créer un produit
-            </Button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Produit</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Catégorie</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Prix</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Stock</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Imprimante</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Statut</th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-900">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map(product => (
-                  <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      <div>
-                        <p className="font-medium text-gray-900">{product.name}</p>
-                        <p className="text-sm text-gray-600">{product.description}</p>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {product.category}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="font-medium text-gray-900">{product.price.toLocaleString('fr-FR')} CFA</span>
-                      {product.sizes && (
-                        <p className="text-xs text-gray-500">
-                          {product.sizes.length} tailles
-                        </p>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`font-medium ${
-                        (product.stock || 0) > 10 ? 'text-green-600' : 
-                        (product.stock || 0) > 0 ? 'text-amber-600' : 'text-red-600'
-                      }`}>
-                        {product.stock || 0}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        {getPrinterIcon(product.printer || 'cuisine')}
-                        <span className="text-sm text-gray-600">
-                          {getPrinterText(product.printer || 'cuisine')}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        product.isActive 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {product.isActive ? 'Actif' : 'Inactif'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => handleEditProduct(product)}
-                          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProduct(product.id)}
-                          className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      </div>
 
       {/* Modal de création/édition de produit */}
       <Modal
@@ -347,23 +307,74 @@ const ProductsManagement: React.FC = () => {
         />
       </Modal>
 
-      {/* Modal de création/édition de catégorie */}
+      {/* Modal de gestion des catégories */}
       <Modal
         isOpen={isCategoryModalOpen}
         onClose={() => {
           setIsCategoryModalOpen(false);
           setEditingCategory(null);
         }}
-        title={editingCategory ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
+        title="Gestion des catégories"
+        size="lg"
       >
-        <CategoryForm
-          category={editingCategory}
-          onSave={handleSaveCategory}
-          onCancel={() => {
-            setIsCategoryModalOpen(false);
-            setEditingCategory(null);
-          }}
-        />
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <Button
+              onClick={() => setEditingCategory({})}
+              icon={Plus}
+              size="sm"
+            >
+              Nouvelle catégorie
+            </Button>
+          </div>
+
+          {editingCategory !== null ? (
+            <CategoryForm
+              category={editingCategory}
+              onSave={(categoryData) => {
+                if (editingCategory.id) {
+                  updateCategory(editingCategory.id, categoryData);
+                } else {
+                  addCategory(categoryData);
+                }
+                setEditingCategory(null);
+              }}
+              onCancel={() => setEditingCategory(null)}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-auto">
+              {categories.map(category => (
+                <div key={category.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{category.name}</p>
+                    <p className="text-sm text-gray-600">{category.description}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {products.filter(p => p.category === category.name).length} produits
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setEditingCategory(category)}
+                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
+                          deleteCategory(category.id);
+                        }
+                      }}
+                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );
