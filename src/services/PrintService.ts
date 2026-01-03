@@ -379,6 +379,41 @@ export class PrintService {
     console.log('PrintService.printOrder - Impression commande terminée avec succès');
   }
 
+  async printOrderByPrinter(items: OrderItem[], printerType: string, orderType: string, tableId?: string): Promise<void> {
+    console.log('PrintService.printOrderByPrinter - Début impression pour imprimante:', printerType);
+
+    const printer = this.findPrinter(printerType as 'cuisine' | 'bar' | 'caisse');
+    if (!printer) {
+      console.warn(`Imprimante ${printerType} non trouvée ou inactive`);
+      return;
+    }
+
+    try {
+      const itemsCopy = items.map(item => ({ ...item }));
+      const content = this.generateOrderContent(
+        itemsCopy,
+        this.getOrderTypeText(orderType),
+        tableId
+      );
+
+      const printJob: PrintJob = {
+        id: Date.now().toString(),
+        type: 'order',
+        printerId: printer.id,
+        content,
+        timestamp: new Date(),
+        status: 'pending',
+      };
+
+      await this.executePrintJob(printJob);
+      console.log(`PrintService.printOrderByPrinter - Impression terminée pour ${printerType}`);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Erreur inconnue';
+      console.error(`Erreur d'impression pour ${printerType}:`, errorMsg);
+      throw new Error(`Erreur d'impression pour ${printerType}: ${errorMsg}`);
+    }
+  }
+
   private groupItemsByPrinter(items: OrderItem[], categories: string[]): Map<string, OrderItem[]> {
     const itemsByPrinter = new Map<string, OrderItem[]>();
 

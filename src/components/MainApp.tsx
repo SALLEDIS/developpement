@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './Layout/Sidebar';
 import Header from './Layout/Header';
 import Dashboard from './Dashboard/Dashboard';
@@ -11,12 +11,24 @@ import WaiterApp from './Waiter/WaiterApp';
 import ReportsManagement from './Reports/ReportsManagement';
 import { useTables } from '../hooks/useTables';
 import { useAuth } from '../hooks/useAuth';
+import { usePrinters } from '../hooks/usePrinters';
+import PrintService from '../services/PrintService';
 
 const MainApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState('pos');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { tables } = useTables();
   const { user } = useAuth();
+  const { printers } = usePrinters();
+
+  const printService = PrintService.getInstance();
+
+  useEffect(() => {
+    if (printers.length > 0) {
+      printService.setPrinters(printers);
+      console.log('MainApp - Imprimantes configurées dans PrintService:', printers.length);
+    }
+  }, [printers]);
 
   const getTabTitle = (tab: string) => {
     const titles: Record<string, string> = {
