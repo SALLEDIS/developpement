@@ -114,18 +114,34 @@ export class PrintService {
   }
 
   private findPrinter(type: 'cuisine' | 'bar' | 'caisse'): Printer | null {
-    // Pour l'imprimante de caisse, essayer d'abord avec le filtre complet
+    console.log(`  findPrinter: Recherche imprimante ${type}...`);
+    console.log(`  Imprimantes disponibles: ${this.printers.length}`);
+
     let printer = this.printers.find(p => p.type === type && p.isActive && p.isOnline);
 
-    // Si aucune imprimante de caisse n'est trouvée, chercher n'importe quelle imprimante active de caisse
-    if (!printer && type === 'caisse') {
+    if (!printer) {
+      console.log(`  Aucune imprimante ${type} active ET online trouvée`);
       printer = this.printers.find(p => p.type === type && p.isActive) || null;
 
-      // Si toujours aucune, configurer une imprimante par défaut
-      if (!printer) {
-        this.configureDefaultCashPrinter();
-        printer = this.printers.find(p => p.type === type && p.isActive) || null;
+      if (printer) {
+        console.log(`  ✓ Imprimante ${type} active trouvée (offline mais on essaie quand même):`, printer.name);
       }
+    } else {
+      console.log(`  ✓ Imprimante ${type} active et online trouvée:`, printer.name);
+    }
+
+    if (!printer && type === 'caisse') {
+      console.log('  Aucune imprimante de caisse, tentative de configuration automatique...');
+      this.configureDefaultCashPrinter();
+      printer = this.printers.find(p => p.type === type && p.isActive) || null;
+
+      if (printer) {
+        console.log('  ✓ Imprimante de caisse configurée automatiquement:', printer.name);
+      }
+    }
+
+    if (!printer) {
+      console.log(`  ✗ AUCUNE imprimante ${type} disponible`);
     }
 
     return printer;
@@ -295,22 +311,30 @@ export class PrintService {
     }
   }
 
-  async printTicket(order: Order, items: OrderItem[]): Promise<void> {
-    console.log('PrintService.printTicket - Début impression ticket');
+  async printTicket(order: Order, items?: OrderItem[]): Promise<void> {
+    console.log('\n=== printTicket ===');
+    console.log('Commande:', order.orderNumber);
+    console.log('Total:', order.total);
 
     const printer = this.findPrinter('caisse');
     if (!printer) {
-      console.error('Aucune imprimante de caisse disponible');
-      console.log('Imprimantes configurées:', this.printers);
+      console.error('✗ Aucune imprimante de caisse disponible');
+      console.log('Imprimantes configurées:', this.printers.map(p => ({ name: p.name, type: p.type, active: p.isActive })));
       throw new Error('Aucune imprimante de caisse disponible. Veuillez configurer une imprimante dans les paramètres.');
     }
 
-    console.log('Imprimante de caisse trouvée:', printer.name);
+    console.log('✓ Imprimante de caisse trouvée:', printer.name);
+    console.log('  ID:', printer.id);
+    console.log('  Port:', printer.port);
 
     const orderCopy = { ...order };
-    const itemsCopy = items.map(item => ({ ...item }));
+    const itemsCopy = (items || order.items).map(item => ({ ...item }));
+
+    console.log('Articles à imprimer:', itemsCopy.length);
 
     const content = this.generateTicketContent(orderCopy, itemsCopy);
+    console.log('Contenu généré:', content.substring(0, 100) + '...');
+
     const printJob: PrintJob = {
       id: Date.now().toString(),
       type: 'ticket',
@@ -321,7 +345,7 @@ export class PrintService {
     };
 
     await this.executePrintJob(printJob);
-    console.log('PrintService.printTicket - Impression ticket terminée avec succès');
+    console.log('✓ Impression ticket terminée avec succès\n');
   }
 
   async printBill(order: Order, items: OrderItem[], customerName?: string): Promise<void> {
@@ -396,13 +420,26 @@ export class PrintService {
   }
 
   async printOrderByPrinter(items: OrderItem[], printerType: string, orderType: string, tableId?: string): Promise<void> {
-    console.log('PrintService.printOrderByPrinter - Début impression pour imprimante:', printerType);
+    console.log('\n=== printOrderByPrinter ===');
+    console.log('Type d\'imprimante demandée:', printerType);
+    console.log('Nombre d\'articles:', items.length);
+    console.log('Type de commande:', orderType);
+    console.log('Table:', tableId);
 
     const printer = this.findPrinter(printerType as 'cuisine' | 'bar' | 'caisse');
     if (!printer) {
-      console.warn(`Imprimante ${printerType} non trouvée ou inactive`);
-      return;
+      console.warn(`✗ Imprimante ${printerType} non trouvée ou inactive`);
+      console.log('Imprimantes disponibles:');
+      this.printers.forEach(p => {
+        console.log(`  - ${p.name} (${p.type}) - Active: ${p.isActive}, Online: ${p.isOnline}`);
+      });
+      throw new Error(`Imprimante ${printerType} non disponible`);
     }
+
+    console.log('✓ Imprimante trouvée:', printer.name);
+    console.log('  ID:', printer.id);
+    console.log('  Type:', printer.type);
+    console.log('  Port:', printer.port);
 
     try {
       const itemsCopy = items.map(item => ({ ...item }));
@@ -411,6 +448,8 @@ export class PrintService {
         this.getOrderTypeText(orderType),
         tableId
       );
+
+      console.log('Contenu généré:', content.substring(0, 100) + '...');
 
       const printJob: PrintJob = {
         id: Date.now().toString(),
@@ -422,10 +461,10 @@ export class PrintService {
       };
 
       await this.executePrintJob(printJob);
-      console.log(`PrintService.printOrderByPrinter - Impression terminée pour ${printerType}`);
+      console.log(`✓ Impression terminée pour ${printerType}\n`);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Erreur inconnue';
-      console.error(`Erreur d'impression pour ${printerType}:`, errorMsg);
+      console.error(`✗ Erreur d'impression pour ${printerType}:`, errorMsg);
       throw new Error(`Erreur d'impression pour ${printerType}: ${errorMsg}`);
     }
   }

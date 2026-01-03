@@ -1,5 +1,59 @@
 # Guide de dépannage - Impression
 
+## CORRECTION APPLIQUÉE
+
+L'impression a été corrigée avec:
+1. Ajout de l'impression automatique du ticket lors de l'encaissement
+2. Logs détaillés dans la console pour diagnostiquer les problèmes
+3. Meilleurs messages d'erreur
+4. Configuration automatique de l'imprimante de caisse
+
+## Comment tester maintenant
+
+### 1. Configurer l'imprimante de caisse
+
+1. Allez dans **Paramètres → Imprimantes**
+2. Cliquez sur **"Configurer automatiquement"**
+3. Une imprimante de caisse sera créée automatiquement
+4. Testez-la avec le bouton **"Tester"**
+
+### 2. Tester l'encaissement (impression ticket)
+
+1. Ouvrez la console (F12)
+2. Allez dans **POS**
+3. Sélectionnez une table
+4. Ajoutez des articles
+5. Cliquez sur **"Encaisser"**
+6. Regardez les logs dans la console:
+
+```
+=== printTicket ===
+Commande: CMD-123456
+✓ Imprimante de caisse trouvée: Imprimante Caisse
+=== PrintService.executePrintJob ===
+✓ Imprimante trouvée: Imprimante Caisse
+→ Mode: Imprimante système
+Ouverture de la fenêtre d'impression...
+✓ Job terminé avec succès
+```
+
+### 3. Tester l'envoi cuisine/bar
+
+1. Allez dans **Paramètres → Imprimantes**
+2. Ajoutez une imprimante de type **Cuisine** et/ou **Bar**
+3. Retournez au **POS**
+4. Ajoutez des articles
+5. Cliquez sur **"Envoyer"**
+6. Regardez les logs:
+
+```
+Envoi vers les imprimantes: ['cuisine', 'bar']
+=== printOrderByPrinter ===
+Type d'imprimante demandée: cuisine
+✓ Imprimante trouvée: Imprimante Cuisine
+✓ Impression terminée pour cuisine
+```
+
 ## Le test d'impression échoue
 
 ### 1. Ouvrir la console du navigateur

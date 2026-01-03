@@ -180,28 +180,41 @@ const POSSystem: React.FC = () => {
         itemsByPrinter[printerType].push(item);
       });
 
+      console.log('Envoi vers les imprimantes:', Object.keys(itemsByPrinter));
+
       for (const [printerType, items] of Object.entries(itemsByPrinter)) {
+        console.log(`Envoi de ${items.length} article(s) vers ${printerType}...`);
         await printService.printOrderByPrinter(items, printerType, 'dine-in', selectedTableId);
       }
 
-      alert('Commande envoyée !');
+      alert('Commande envoyée !\nImpression(s) envoyée(s) à la cuisine/bar.');
       clearCart();
       setViewMode('tables');
     } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur lors de l\'envoi');
+      const errorMsg = error instanceof Error ? error.message : 'Erreur inconnue';
+      console.error('Erreur lors de l\'envoi:', error);
+      alert('Erreur lors de l\'envoi:\n' + errorMsg + '\n\nVérifiez les imprimantes dans Paramètres.\nConsultez la console (F12) pour plus de détails.');
     }
   };
 
   const handleProcessPayment = async () => {
     if (selectedOrderForPayment) {
-      updateOrderStatus(selectedOrderForPayment.id, 'paid');
-      if (selectedOrderForPayment.tableId) {
-        updateTableStatus(selectedOrderForPayment.tableId, 'available');
+      try {
+        console.log('Impression du ticket pour commande existante...');
+        await printService.printTicket(selectedOrderForPayment);
+        console.log('Ticket imprimé avec succès');
+
+        updateOrderStatus(selectedOrderForPayment.id, 'paid');
+        if (selectedOrderForPayment.tableId) {
+          updateTableStatus(selectedOrderForPayment.tableId, 'available');
+        }
+        alert(`Paiement de ${selectedOrderForPayment.total.toLocaleString('fr-FR')} CFA encaissé !\nTicket envoyé à l'impression.`);
+        clearCart();
+        setViewMode('tables');
+      } catch (error) {
+        console.error('Erreur d\'impression:', error);
+        alert('Paiement encaissé mais erreur d\'impression.\nVérifiez l\'imprimante de caisse.');
       }
-      alert(`Paiement de ${selectedOrderForPayment.total.toLocaleString('fr-FR')} CFA encaissé !`);
-      clearCart();
-      setViewMode('tables');
       return;
     }
 
@@ -231,11 +244,16 @@ const POSSystem: React.FC = () => {
         updateTableStatus(selectedTableId, 'available');
       }
 
-      alert(`Paiement de ${total.toLocaleString('fr-FR')} CFA encaissé !`);
+      console.log('Impression du ticket de caisse...');
+      await printService.printTicket(order);
+      console.log('Ticket imprimé avec succès');
+
+      alert(`Paiement de ${total.toLocaleString('fr-FR')} CFA encaissé !\nTicket envoyé à l'impression.`);
       clearCart();
       setViewMode('tables');
     } catch (error) {
       console.error('Erreur:', error);
+      alert('Paiement encaissé mais erreur d\'impression.\nVérifiez l\'imprimante de caisse.');
     }
   };
 
