@@ -112,13 +112,30 @@ const PrinterSettings: React.FC = () => {
   };
 
   const handleToggleServerEnabled = async () => {
+    console.log('=== TOGGLE SERVER ENABLED CLICKED ===');
     try {
       const newValue = !(config?.enabled || false);
+      console.log('Toggling from', config?.enabled, 'to', newValue);
       await updateConfig({ enabled: newValue });
+      console.log('Toggle successful');
     } catch (error) {
-      console.error('Erreur complète:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-      alert('Erreur lors de la mise à jour:\n' + errorMessage);
+      console.error('=== TOGGLE ERROR ===');
+      console.error('Full error object:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error constructor:', error?.constructor?.name);
+
+      let errorMessage = 'Erreur inconnue';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      } else if (typeof error === 'object' && error !== null) {
+        console.error('Error keys:', Object.keys(error));
+        console.error('Error values:', Object.values(error));
+        errorMessage = JSON.stringify(error, null, 2);
+      }
+
+      alert('Erreur lors de la mise à jour:\n' + errorMessage + '\n\nOuvrez la console (F12) pour plus de détails');
     }
   };
 

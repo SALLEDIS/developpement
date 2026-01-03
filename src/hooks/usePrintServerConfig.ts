@@ -79,46 +79,80 @@ export function usePrintServerConfig() {
   }, [config?.enabled, config?.server_url]);
 
   const updateConfig = async (updates: Partial<PrintServerConfig>) => {
+    console.log('=== UPDATE CONFIG ===');
+    console.log('Current config:', config);
+    console.log('Updates:', updates);
+
     try {
       if (!config) {
+        console.log('Config is null, fetching from DB...');
         const { data, error } = await supabase
           .from('print_server_config')
           .select('*')
           .maybeSingle();
 
-        if (error) throw error;
+        console.log('Fetch result:', { data, error });
+
+        if (error) {
+          console.error('Error fetching config:', error);
+          throw error;
+        }
 
         if (!data) {
+          console.log('No config found, inserting...');
+          const newConfig = {
+            enabled: false,
+            server_url: 'http://localhost:3001',
+            auto_print: true,
+            ...updates
+          };
+          console.log('New config to insert:', newConfig);
+
           const { error: insertError } = await supabase
             .from('print_server_config')
-            .insert({
-              enabled: false,
-              server_url: 'http://localhost:3001',
-              auto_print: true,
-              ...updates
-            });
+            .insert(newConfig);
 
-          if (insertError) throw insertError;
+          if (insertError) {
+            console.error('Insert error:', insertError);
+            throw insertError;
+          }
+          console.log('Config inserted successfully');
         } else {
+          console.log('Config found, updating with ID:', data.id);
           const { error: updateError } = await supabase
             .from('print_server_config')
             .update(updates)
             .eq('id', data.id);
 
-          if (updateError) throw updateError;
+          if (updateError) {
+            console.error('Update error:', updateError);
+            throw updateError;
+          }
+          console.log('Config updated successfully');
         }
       } else {
+        console.log('Using cached config, updating with ID:', config.id);
         const { error } = await supabase
           .from('print_server_config')
           .update(updates)
           .eq('id', config.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
+        console.log('Config updated successfully');
       }
 
+      console.log('Refreshing config...');
       await fetchConfig();
+      console.log('Config refreshed');
     } catch (error) {
-      console.error('Error updating print server config:', error);
+      console.error('=== ERROR IN UPDATE CONFIG ===');
+      console.error('Error type:', typeof error);
+      console.error('Error object:', error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'N/A');
       throw error;
     }
   };
