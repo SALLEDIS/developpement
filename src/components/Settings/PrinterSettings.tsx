@@ -5,10 +5,11 @@ import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import PrinterForm from './PrinterForm';
 import PrintService from '../../services/PrintService';
+import { usePrinters } from '../../hooks/usePrinters';
 import { Printer as PrinterType } from '../../types';
 
 const PrinterSettings: React.FC = () => {
-  const [printers, setPrinters] = useState<PrinterType[]>([]);
+  const { printers, addPrinter, updatePrinter, deletePrinter } = usePrinters();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPrinter, setEditingPrinter] = useState<PrinterType | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
@@ -16,26 +17,8 @@ const PrinterSettings: React.FC = () => {
   const printService = PrintService.getInstance();
 
   useEffect(() => {
-    loadPrinters();
-  }, []);
-
-  const loadPrinters = () => {
-    const savedPrinters = localStorage.getItem('restobar_printers');
-    if (savedPrinters) {
-      try {
-        const parsedPrinters = JSON.parse(savedPrinters);
-        setPrinters(parsedPrinters);
-        printService.setPrinters(parsedPrinters);
-      } catch (error) {
-        console.error('Erreur lors du chargement des imprimantes:', error);
-        setPrinters([]);
-      }
-    }
-  };
-
-  useEffect(() => {
     if (printers.length > 0) {
-      localStorage.setItem('restobar_printers', JSON.stringify(printers));
+      printService.setPrinters(printers);
     }
   }, [printers]);
 
@@ -46,8 +29,7 @@ const PrinterSettings: React.FC = () => {
       const defaultPrinter = printService.getDefaultSystemPrinter();
 
       if (defaultPrinter) {
-        const cashPrinter: PrinterType = {
-          id: 'cash-printer',
+        const cashPrinterData: Omit<PrinterType, 'id'> = {
           name: 'Imprimante Caisse',
           type: 'caisse',
           ipAddress: defaultPrinter.name,
@@ -60,8 +42,7 @@ const PrinterSettings: React.FC = () => {
           autoprint: true
         };
 
-        setPrinters([cashPrinter]);
-        printService.setPrinters([cashPrinter]);
+        await addPrinter(cashPrinterData);
         alert('✓ Configuration automatique terminée!\nImprimante de caisse prête.');
       } else {
         alert('Aucune imprimante système détectée.\nVeuillez en ajouter une manuellement.');
@@ -84,31 +65,19 @@ const PrinterSettings: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSavePrinter = (printerData: Omit<PrinterType, 'id'>) => {
+  const handleSavePrinter = async (printerData: Omit<PrinterType, 'id'>) => {
     if (editingPrinter) {
-      const updatedPrinters = printers.map(p =>
-        p.id === editingPrinter.id ? { ...printerData, id: editingPrinter.id } : p
-      );
-      setPrinters(updatedPrinters);
-      printService.setPrinters(updatedPrinters);
+      await updatePrinter(editingPrinter.id, printerData);
     } else {
-      const newPrinter: PrinterType = {
-        ...printerData,
-        id: Date.now().toString(),
-      };
-      const updatedPrinters = [...printers, newPrinter];
-      setPrinters(updatedPrinters);
-      printService.setPrinters(updatedPrinters);
+      await addPrinter(printerData);
     }
     setIsModalOpen(false);
     setEditingPrinter(null);
   };
 
-  const handleDeletePrinter = (printerId: string) => {
+  const handleDeletePrinter = async (printerId: string) => {
     if (confirm('Supprimer cette imprimante ?')) {
-      const updatedPrinters = printers.filter(p => p.id !== printerId);
-      setPrinters(updatedPrinters);
-      printService.setPrinters(updatedPrinters);
+      await deletePrinter(printerId);
     }
   };
 
@@ -122,12 +91,12 @@ const PrinterSettings: React.FC = () => {
     }
   };
 
-  const handleToggleActive = (printerId: string) => {
-    const updatedPrinters = printers.map(p =>
-      p.id === printerId ? { ...p, isActive: !p.isActive } : p
-    );
-    setPrinters(updatedPrinters);
-    printService.setPrinters(updatedPrinters);
+  const handleToggleActive = async (printerId: string) => {
+    const printer = printers.find(p => p.id === printerId);
+    if (printer) {
+      const { id, ...printerData } = printer;
+      await updatePrinter(printerId, { ...printerData, isActive: !printer.isActive });
+    }
   };
 
   const getTypeLabel = (type: string) => {

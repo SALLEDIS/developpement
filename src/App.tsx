@@ -9,6 +9,7 @@ import { useSettingsProvider, SettingsContext } from './hooks/useSettings';
 import { useCashSessionProvider, CashSessionContext } from './hooks/useCashSession';
 import { usePaymentMethodsProvider, PaymentMethodsContext } from './hooks/usePaymentMethods';
 import { useSecuritySettingsProvider, SecuritySettingsContext } from './hooks/useSecuritySettings';
+import { usePrinterProvider, PrinterContext } from './hooks/usePrinters';
 import { useAuth } from './hooks/useAuth';
 import LoginForm from './components/Auth/LoginForm';
 import MainApp from './components/MainApp';
@@ -63,6 +64,11 @@ const SecuritySettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   return <SecuritySettingsContext.Provider value={securitySettings}>{children}</SecuritySettingsContext.Provider>;
 };
 
+const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const printers = usePrinterProvider();
+  return <PrinterContext.Provider value={printers}>{children}</PrinterContext.Provider>;
+};
+
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
 
@@ -83,19 +89,21 @@ function App() {
       <SettingsProvider>
         <PaymentMethodsProvider>
           <SecuritySettingsProvider>
-            <OrderProvider>
-              <ExpenseProvider>
-                <CashSessionProvider>
-                  <UserProvider>
-                    <ProductProvider>
-                      <TableProvider>
-                        <AppContent />
-                      </TableProvider>
-                    </ProductProvider>
-                  </UserProvider>
-                </CashSessionProvider>
-              </ExpenseProvider>
-            </OrderProvider>
+            <PrinterProvider>
+              <OrderProvider>
+                <ExpenseProvider>
+                  <CashSessionProvider>
+                    <UserProvider>
+                      <ProductProvider>
+                        <TableProvider>
+                          <AppContent />
+                        </TableProvider>
+                      </ProductProvider>
+                    </UserProvider>
+                  </CashSessionProvider>
+                </ExpenseProvider>
+              </OrderProvider>
+            </PrinterProvider>
           </SecuritySettingsProvider>
         </PaymentMethodsProvider>
       </SettingsProvider>
