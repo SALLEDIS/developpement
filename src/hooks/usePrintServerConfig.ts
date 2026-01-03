@@ -79,15 +79,43 @@ export function usePrintServerConfig() {
   }, [config?.enabled, config?.server_url]);
 
   const updateConfig = async (updates: Partial<PrintServerConfig>) => {
-    if (!config) return;
-
     try {
-      const { error } = await supabase
-        .from('print_server_config')
-        .update(updates)
-        .eq('id', config.id);
+      if (!config) {
+        const { data, error } = await supabase
+          .from('print_server_config')
+          .select('*')
+          .maybeSingle();
 
-      if (error) throw error;
+        if (error) throw error;
+
+        if (!data) {
+          const { error: insertError } = await supabase
+            .from('print_server_config')
+            .insert({
+              enabled: false,
+              server_url: 'http://localhost:3001',
+              auto_print: true,
+              ...updates
+            });
+
+          if (insertError) throw insertError;
+        } else {
+          const { error: updateError } = await supabase
+            .from('print_server_config')
+            .update(updates)
+            .eq('id', data.id);
+
+          if (updateError) throw updateError;
+        }
+      } else {
+        const { error } = await supabase
+          .from('print_server_config')
+          .update(updates)
+          .eq('id', config.id);
+
+        if (error) throw error;
+      }
+
       await fetchConfig();
     } catch (error) {
       console.error('Error updating print server config:', error);

@@ -112,20 +112,24 @@ const PrinterSettings: React.FC = () => {
   };
 
   const handleToggleServerEnabled = async () => {
-    if (!config) return;
     try {
-      await updateConfig({ enabled: !config.enabled });
+      const newValue = !(config?.enabled || false);
+      await updateConfig({ enabled: newValue });
     } catch (error) {
-      alert('Erreur lors de la mise à jour de la configuration');
+      console.error('Erreur complète:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      alert('Erreur lors de la mise à jour:\n' + errorMessage);
     }
   };
 
   const handleToggleAutoPrint = async () => {
-    if (!config) return;
     try {
-      await updateConfig({ auto_print: !config.auto_print });
+      const newValue = !(config?.auto_print || false);
+      await updateConfig({ auto_print: newValue });
     } catch (error) {
-      alert('Erreur lors de la mise à jour de la configuration');
+      console.error('Erreur complète:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      alert('Erreur lors de la mise à jour:\n' + errorMessage);
     }
   };
 
