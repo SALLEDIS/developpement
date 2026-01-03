@@ -471,9 +471,7 @@ export class PrintService {
     try {
       if (printer.port > 0) {
         console.log('Envoi vers imprimante réseau ' + printer.ipAddress + ':' + printer.port);
-        // Pour l'instant, on simule l'envoi réseau
-        console.log('Contenu à imprimer:');
-        console.log(printJob.content);
+        await this.printToNetworkPrinter(printJob.content, printer.ipAddress, printer.port);
       } else {
         console.log('Envoi vers imprimante système');
 
@@ -491,6 +489,49 @@ export class PrintService {
       console.error('Erreur d\'impression:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
       throw new Error(errorMessage);
+    }
+  }
+
+  private async printToNetworkPrinter(content: string, ipAddress: string, port: number): Promise<void> {
+    const PRINT_SERVER_URL = 'http://localhost:3001/print';
+
+    try {
+      console.log(`Envoi au serveur d'impression local pour ${ipAddress}:${port}`);
+
+      const response = await fetch(PRINT_SERVER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ipAddress,
+          port,
+          content,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error ||
+          errorData.details ||
+          `Erreur serveur: ${response.status}`
+        );
+      }
+
+      const result = await response.json();
+      console.log('Impression réseau réussie:', result);
+    } catch (error) {
+      console.error('Erreur d\'impression réseau:', error);
+
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error(
+          'Serveur d\'impression non accessible. ' +
+          'Assurez-vous que le serveur d\'impression est démarré (cd print-server && npm start)'
+        );
+      }
+
+      throw error;
     }
   }
 
