@@ -82,12 +82,19 @@ const PrinterSettings: React.FC = () => {
   };
 
   const handleTestPrint = async (printer: PrinterType) => {
+    console.log('\n=== TEST D\'IMPRESSION ===');
+    console.log('Imprimante:', printer.name);
+    console.log('Type:', printer.type);
+    console.log('Port:', printer.port);
+    console.log('ID:', printer.id);
+
     try {
       await printService.testPrint(printer.id);
-      alert('✓ Test réussi!');
+      alert('✓ Test réussi!\n\nLa fenêtre d\'impression devrait s\'ouvrir automatiquement.\nSélectionnez votre imprimante et cliquez sur Imprimer.');
     } catch (error) {
-      alert('✗ Test échoué\nVérifiez l\'imprimante.');
-      console.error('Erreur test impression:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      console.error('✗ Erreur test impression:', error);
+      alert('✗ Test échoué\n\nErreur: ' + errorMessage + '\n\nConsultez la console (F12) pour plus de détails.');
     }
   };
 

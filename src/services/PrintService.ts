@@ -26,7 +26,10 @@ export class PrintService {
   private defaultSystemPrinter: SystemPrinter | null = null;
 
   private constructor() {
-    this.detectSystemPrinters();
+    console.log('PrintService - Initialisation du service...');
+    this.detectSystemPrinters().then(() => {
+      console.log('PrintService - Initialisation terminée');
+    });
   }
 
   static getInstance(): PrintService {
@@ -37,13 +40,18 @@ export class PrintService {
   }
 
   setPrinters(printers: Printer[]) {
+    console.log('PrintService.setPrinters - Mise à jour des imprimantes:', printers.length);
+    printers.forEach(p => {
+      console.log(`  - ${p.name} (${p.type}) - Port: ${p.port} - Active: ${p.isActive}`);
+    });
     this.printers = printers;
     this.configureDefaultCashPrinter();
   }
 
   private async detectSystemPrinters(): Promise<void> {
     try {
-      // Imprimante virtuelle par défaut pour l'impression via navigateur
+      console.log('PrintService - Détection des imprimantes système...');
+
       this.systemPrinters = [
         {
           name: 'Imprimante système',
@@ -56,9 +64,17 @@ export class PrintService {
 
       this.defaultSystemPrinter = this.systemPrinters.find(p => p.isDefault) || null;
 
-      console.log('Imprimante système disponible:', this.defaultSystemPrinter?.name);
+      if (this.defaultSystemPrinter) {
+        console.log('✓ Imprimante système disponible:', this.defaultSystemPrinter.name);
+        console.log('  Status:', this.defaultSystemPrinter.status);
+        console.log('  Type:', this.defaultSystemPrinter.type);
+      } else {
+        console.warn('✗ Aucune imprimante système par défaut trouvée');
+      }
     } catch (error) {
-      console.error('Erreur lors de la détection des imprimantes système:', error);
+      console.error('✗ Erreur lors de la détection des imprimantes système:', error);
+      this.systemPrinters = [];
+      this.defaultSystemPrinter = null;
     }
   }
 
@@ -452,7 +468,9 @@ export class PrintService {
   }
 
   private async executePrintJob(printJob: PrintJob): Promise<void> {
-    console.log('PrintService.executePrintJob - Début exécution job:', printJob.type);
+    console.log('\n=== PrintService.executePrintJob ===');
+    console.log('Type de job:', printJob.type);
+    console.log('Printer ID:', printJob.printerId);
 
     printJob.status = 'printing';
     this.printQueue.push(printJob);
@@ -460,33 +478,42 @@ export class PrintService {
     const printer = this.printers.find(p => p.id === printJob.printerId);
     if (!printer) {
       printJob.status = 'failed';
+      console.error('✗ Imprimante introuvable avec ID:', printJob.printerId);
+      console.log('Imprimantes disponibles:', this.printers.map(p => ({ id: p.id, name: p.name })));
       throw new Error('Imprimante introuvable');
     }
 
-    // Toujours s'assurer que l'imprimante système est disponible
+    console.log('✓ Imprimante trouvée:', printer.name);
+    console.log('  Type:', printer.type);
+    console.log('  Port:', printer.port);
+
     if (!this.defaultSystemPrinter) {
+      console.log('defaultSystemPrinter est null, détection en cours...');
       await this.detectSystemPrinters();
     }
 
     try {
       if (printer.port > 0) {
-        console.log('Envoi vers imprimante réseau ' + printer.ipAddress + ':' + printer.port);
+        console.log('→ Mode: Imprimante réseau');
+        console.log('  Adresse:', printer.ipAddress + ':' + printer.port);
         await this.printToNetworkPrinter(printJob.content, printer.ipAddress, printer.port);
       } else {
-        console.log('Envoi vers imprimante système');
+        console.log('→ Mode: Imprimante système');
 
         if (this.defaultSystemPrinter) {
+          console.log('  Imprimante système:', this.defaultSystemPrinter.name);
           await this.printToSystemPrinter(printJob.content, this.defaultSystemPrinter);
         } else {
+          console.error('✗ defaultSystemPrinter est null!');
           throw new Error('Imprimante système non disponible');
         }
       }
 
       printJob.status = 'completed';
-      console.log('PrintService.executePrintJob - Job terminé avec succès');
+      console.log('✓ Job terminé avec succès\n');
     } catch (error) {
       printJob.status = 'failed';
-      console.error('Erreur d\'impression:', error);
+      console.error('✗ Erreur d\'impression:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
       throw new Error(errorMessage);
     }
@@ -539,8 +566,8 @@ export class PrintService {
     return new Promise((resolve, reject) => {
       try {
         console.log('PrintService.printToSystemPrinter - Début impression système');
+        console.log('Imprimante:', systemPrinter.name);
 
-        // Créer un iframe caché pour l'impression
         const iframe = document.createElement('iframe');
         iframe.style.position = 'fixed';
         iframe.style.right = '0';
@@ -621,39 +648,38 @@ export class PrintService {
         iframeDoc.write(htmlContent);
         iframeDoc.close();
 
-        // Attendre que le contenu soit chargé
-        iframe.onload = () => {
+        setTimeout(() => {
           try {
-            // Attendre un court instant puis imprimer
+            const iframeWindow = iframe.contentWindow;
+            if (!iframeWindow) {
+              document.body.removeChild(iframe);
+              reject(new Error('Fenêtre d\'impression non disponible'));
+              return;
+            }
+
+            console.log('Ouverture de la fenêtre d\'impression...');
+            iframeWindow.focus();
+            iframeWindow.print();
+
             setTimeout(() => {
-              const iframeWindow = iframe.contentWindow;
-              if (iframeWindow) {
-                iframeWindow.focus();
-                iframeWindow.print();
-
-                // Nettoyer après impression
-                setTimeout(() => {
-                  document.body.removeChild(iframe);
-                }, 1000);
-
-                console.log('Impression envoyée vers l\'imprimante système: ' + systemPrinter.name);
-                resolve();
-              } else {
+              try {
                 document.body.removeChild(iframe);
-                reject(new Error('Fenêtre d\'impression non disponible'));
+              } catch (e) {
+                console.warn('Impossible de supprimer l\'iframe:', e);
               }
-            }, 250);
+            }, 1000);
+
+            console.log('Impression envoyée vers l\'imprimante système: ' + systemPrinter.name);
+            resolve();
           } catch (error) {
-            document.body.removeChild(iframe);
+            try {
+              document.body.removeChild(iframe);
+            } catch (e) {
+              console.warn('Impossible de supprimer l\'iframe:', e);
+            }
             reject(error);
           }
-        };
-
-        // Gérer les erreurs de chargement
-        iframe.onerror = () => {
-          document.body.removeChild(iframe);
-          reject(new Error('Erreur lors du chargement du contenu d\'impression'));
-        };
+        }, 300);
 
       } catch (error) {
         console.error('Erreur lors de l\'impression système:', error);
