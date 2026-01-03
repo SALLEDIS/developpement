@@ -1,43 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Printer, CheckCircle, AlertCircle, Plus } from 'lucide-react';
+import { Printer, CheckCircle, AlertCircle, Plus, Settings } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
+import Input from '../ui/Input';
 import PrinterForm from './PrinterForm';
 import PrintService from '../../services/PrintService';
 import { usePrinters } from '../../hooks/usePrinters';
+import { usePrintServerConfig } from '../../hooks/usePrintServerConfig';
 import { Printer as PrinterType } from '../../types';
 
 const PrinterSettings: React.FC = () => {
   const { printers, addPrinter, updatePrinter, deletePrinter } = usePrinters();
+  const { config, isServerOnline, updateConfig } = usePrintServerConfig();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPrinter, setEditingPrinter] = useState<PrinterType | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
-  const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [tempServerUrl, setTempServerUrl] = useState('http://localhost:3001');
 
   const printService = PrintService.getInstance();
-
-  useEffect(() => {
-    const checkServerStatus = async () => {
-      try {
-        const response = await fetch('http://localhost:3001/health', {
-          method: 'GET',
-          signal: AbortSignal.timeout(2000)
-        });
-        if (response.ok) {
-          setServerStatus('online');
-        } else {
-          setServerStatus('offline');
-        }
-      } catch (error) {
-        setServerStatus('offline');
-      }
-    };
-
-    checkServerStatus();
-    const interval = setInterval(checkServerStatus, 10000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (printers.length > 0) {
@@ -129,6 +111,39 @@ const PrinterSettings: React.FC = () => {
     }
   };
 
+  const handleToggleServerEnabled = async () => {
+    if (!config) return;
+    try {
+      await updateConfig({ enabled: !config.enabled });
+    } catch (error) {
+      alert('Erreur lors de la mise à jour de la configuration');
+    }
+  };
+
+  const handleToggleAutoPrint = async () => {
+    if (!config) return;
+    try {
+      await updateConfig({ auto_print: !config.auto_print });
+    } catch (error) {
+      alert('Erreur lors de la mise à jour de la configuration');
+    }
+  };
+
+  const handleOpenConfigModal = () => {
+    setTempServerUrl(config?.server_url || 'http://localhost:3001');
+    setIsConfigModalOpen(true);
+  };
+
+  const handleSaveServerConfig = async () => {
+    try {
+      await updateConfig({ server_url: tempServerUrl });
+      setIsConfigModalOpen(false);
+      alert('✓ Configuration sauvegardée');
+    } catch (error) {
+      alert('Erreur lors de la sauvegarde');
+    }
+  };
+
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'caisse': return 'Caisse';
@@ -156,39 +171,81 @@ const PrinterSettings: React.FC = () => {
         </div>
       </div>
 
-      <Card className={serverStatus === 'online' ? 'border-green-200 bg-green-50' : serverStatus === 'offline' ? 'border-yellow-200 bg-yellow-50' : 'border-gray-200'}>
-        <div className="flex items-center gap-3">
-          {serverStatus === 'online' ? (
-            <>
-              <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-green-900">Serveur d'impression actif</h3>
-                <p className="text-sm text-green-700">
-                  Impression directe sans dialogue du navigateur
-                </p>
-              </div>
-            </>
-          ) : serverStatus === 'offline' ? (
-            <>
-              <AlertCircle className="h-6 w-6 text-yellow-600 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-yellow-900">Serveur d'impression hors ligne</h3>
-                <p className="text-sm text-yellow-700">
-                  Fallback: utilisation du dialogue d'impression du navigateur
-                </p>
-                <p className="text-xs text-yellow-600 mt-1">
-                  Pour activer: double-cliquez sur start-print-server.bat (Windows) ou ./start-print-server.sh (Mac/Linux)
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="h-6 w-6 flex-shrink-0 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">Vérification du serveur...</h3>
-              </div>
-            </>
-          )}
+      <Card className={config?.enabled && isServerOnline ? 'border-green-200 bg-green-50' : 'border-gray-200'}>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1">
+              {config?.enabled && isServerOnline ? (
+                <>
+                  <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-green-900">Serveur d'impression actif</h3>
+                    <p className="text-sm text-green-700">
+                      Impression directe sans dialogue du navigateur
+                    </p>
+                    <p className="text-xs text-green-600 mt-1">
+                      URL: {config.server_url}
+                    </p>
+                  </div>
+                </>
+              ) : config?.enabled && !isServerOnline ? (
+                <>
+                  <AlertCircle className="h-6 w-6 text-yellow-600 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-yellow-900">Serveur d'impression hors ligne</h3>
+                    <p className="text-sm text-yellow-700">
+                      Fallback: utilisation du dialogue d'impression du navigateur
+                    </p>
+                    <p className="text-xs text-yellow-600 mt-1">
+                      Pour activer: double-cliquez sur start-print-server.bat (Windows) ou ./start-print-server.sh (Mac/Linux)
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-6 w-6 text-gray-600 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900">Serveur d'impression désactivé</h3>
+                    <p className="text-sm text-gray-700">
+                      Utilisation du dialogue d'impression du navigateur
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={Settings}
+              onClick={handleOpenConfigModal}
+            >
+              Configurer
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-6 pt-3 border-t border-gray-200">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={config?.enabled || false}
+                onChange={handleToggleServerEnabled}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Activer le serveur d'impression</span>
+            </label>
+
+            {config?.enabled && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={config?.auto_print || false}
+                  onChange={handleToggleAutoPrint}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">Impression automatique</span>
+              </label>
+            )}
+          </div>
         </div>
       </Card>
 
@@ -341,6 +398,57 @@ const PrinterSettings: React.FC = () => {
             setEditingPrinter(null);
           }}
         />
+      </Modal>
+
+      <Modal
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
+        title="Configuration du serveur d'impression"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              URL du serveur
+            </label>
+            <Input
+              type="text"
+              value={tempServerUrl}
+              onChange={(e) => setTempServerUrl(e.target.value)}
+              placeholder="http://localhost:3001"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Par défaut: http://localhost:3001
+            </p>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <p className="font-medium mb-1">Instructions</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Lancez le serveur d'impression sur votre poste</li>
+                  <li>Windows: double-cliquez sur start-print-server.bat</li>
+                  <li>Mac/Linux: exécutez ./start-print-server.sh</li>
+                  <li>Si le serveur tourne sur un autre poste, modifiez l'URL ci-dessus</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="secondary"
+              onClick={() => setIsConfigModalOpen(false)}
+            >
+              Annuler
+            </Button>
+            <Button onClick={handleSaveServerConfig}>
+              Sauvegarder
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

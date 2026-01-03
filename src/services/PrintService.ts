@@ -1,4 +1,5 @@
 import { Printer, Order, OrderItem } from '../types';
+import { supabase } from '../lib/supabase';
 
 export interface PrintJob {
   id: string;
@@ -18,17 +19,26 @@ export interface SystemPrinter {
   driver?: string;
 }
 
+interface PrintServerConfig {
+  enabled: boolean;
+  server_url: string;
+  auto_print: boolean;
+}
+
 export class PrintService {
   private static instance: PrintService;
   private printQueue: PrintJob[] = [];
   private printers: Printer[] = [];
   private systemPrinters: SystemPrinter[] = [];
   private defaultSystemPrinter: SystemPrinter | null = null;
+  private printServerConfig: PrintServerConfig | null = null;
 
   private constructor() {
     console.log('PrintService - Initialisation du service...');
-    this.detectSystemPrinters().then(() => {
-      console.log('PrintService - Initialisation terminée');
+    this.loadPrintServerConfig().then(() => {
+      this.detectSystemPrinters().then(() => {
+        console.log('PrintService - Initialisation terminée');
+      });
     });
   }
 
@@ -37,6 +47,43 @@ export class PrintService {
       PrintService.instance = new PrintService();
     }
     return PrintService.instance;
+  }
+
+  private async loadPrintServerConfig(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('print_server_config')
+        .select('enabled, server_url, auto_print')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        this.printServerConfig = data;
+        console.log('✓ Configuration du serveur d\'impression chargée:', data.server_url);
+      } else {
+        this.printServerConfig = {
+          enabled: false,
+          server_url: 'http://localhost:3001',
+          auto_print: true
+        };
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement de la config:', error);
+      this.printServerConfig = {
+        enabled: false,
+        server_url: 'http://localhost:3001',
+        auto_print: true
+      };
+    }
+  }
+
+  private getPrintServerUrl(): string {
+    return this.printServerConfig?.server_url || 'http://localhost:3001';
+  }
+
+  private isPrintServerEnabled(): boolean {
+    return this.printServerConfig?.enabled || false;
   }
 
   setPrinters(printers: Printer[]) {
@@ -559,12 +606,12 @@ export class PrintService {
   }
 
   private async printToNetworkPrinter(content: string, ipAddress: string, port: number): Promise<void> {
-    const PRINT_SERVER_URL = 'http://localhost:3001/print';
+    const printServerUrl = `${this.getPrintServerUrl()}/print`;
 
     try {
       console.log(`Envoi au serveur d'impression pour ${ipAddress}:${port}`);
 
-      const response = await fetch(PRINT_SERVER_URL, {
+      const response = await fetch(printServerUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -605,36 +652,40 @@ export class PrintService {
   }
 
   private async printToSystemPrinter(content: string, systemPrinter: SystemPrinter): Promise<void> {
-    const PRINT_SERVER_URL = 'http://localhost:3001';
+    const printServerUrl = this.getPrintServerUrl();
 
     console.log('PrintService.printToSystemPrinter - Début impression système');
     console.log('Imprimante:', systemPrinter.name);
 
-    try {
-      console.log('Tentative de connexion au serveur d\'impression...');
-      const healthResponse = await fetch(`${PRINT_SERVER_URL}/health`, {
-        method: 'GET',
-        signal: AbortSignal.timeout(2000)
-      });
+    if (this.isPrintServerEnabled()) {
+      try {
+        console.log('Tentative de connexion au serveur d\'impression...');
+        const healthResponse = await fetch(`${printServerUrl}/health`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(2000)
+        });
 
-      if (healthResponse.ok) {
-        console.log('✓ Serveur d\'impression disponible - utilisation du serveur');
-        return await this.printViaServer(content, systemPrinter.name);
+        if (healthResponse.ok) {
+          console.log('✓ Serveur d\'impression disponible - utilisation du serveur');
+          return await this.printViaServer(content, systemPrinter.name);
+        }
+      } catch (error) {
+        console.log('✗ Serveur d\'impression non disponible - fallback sur window.print()');
       }
-    } catch (error) {
-      console.log('✗ Serveur d\'impression non disponible - fallback sur window.print()');
+    } else {
+      console.log('Serveur d\'impression désactivé - utilisation de window.print()');
     }
 
     return await this.printViaWindowPrint(content, systemPrinter);
   }
 
   private async printViaServer(content: string, printerName?: string): Promise<void> {
-    const PRINT_SERVER_URL = 'http://localhost:3001/print';
+    const printServerUrl = `${this.getPrintServerUrl()}/print`;
 
     try {
       console.log('Envoi au serveur d\'impression pour imprimante système');
 
-      const response = await fetch(PRINT_SERVER_URL, {
+      const response = await fetch(printServerUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
