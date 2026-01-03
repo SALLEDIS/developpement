@@ -1,6 +1,15 @@
-# Serveur d'impression RestoBar
+# Serveur d'Impression RestoBar
 
-Ce serveur local permet d'envoyer des données aux imprimantes réseau (ESC/POS) depuis le navigateur.
+Serveur local Node.js qui contourne le navigateur pour une impression directe et automatique.
+
+## Fonctionnalités
+
+- **Impression système:** USB, réseau partagé (Windows/Mac/Linux)
+- **Impression réseau:** Imprimantes thermiques ESC/POS
+- **Formatage ESC/POS:** Gras, centrage, coupe automatique
+- **API REST:** Simple et efficace
+- **Détection automatique:** Liste les imprimantes système disponibles
+- **Sans dialogue:** Impression directe sans interaction utilisateur
 
 ## Installation
 
@@ -23,14 +32,59 @@ Le serveur reçoit les requêtes HTTP du navigateur et les transmet aux impriman
 
 ### Endpoints
 
-- `GET /health` - Vérifier l'état du serveur
-- `POST /print` - Envoyer une impression
+#### GET /health
 
-### Exemple de requête
+Vérifier l'état du serveur.
 
+```bash
+curl http://localhost:3001/health
+```
+
+Réponse:
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-01-03T22:30:00.000Z",
+  "platform": "win32"
+}
+```
+
+#### GET /printers
+
+Lister les imprimantes système disponibles.
+
+```bash
+curl http://localhost:3001/printers
+```
+
+Réponse:
+```json
+{
+  "success": true,
+  "printers": ["HP LaserJet", "Canon TS3300"],
+  "count": 2
+}
+```
+
+#### POST /print
+
+Envoyer une impression.
+
+**Imprimante système:**
 ```json
 POST http://localhost:3001/print
 {
+  "mode": "system",
+  "printerName": "HP LaserJet",
+  "content": "Texte à imprimer"
+}
+```
+
+**Imprimante réseau ESC/POS:**
+```json
+POST http://localhost:3001/print
+{
+  "mode": "network",
   "ipAddress": "192.168.1.100",
   "port": 9100,
   "content": "Texte à imprimer"
@@ -45,10 +99,23 @@ POST http://localhost:3001/print
 
 ## Fonctionnement
 
-1. L'application web envoie une requête HTTP au serveur local (localhost:3001)
+### Mode Système (USB/Réseau partagé)
+
+1. L'application web envoie une requête HTTP au serveur local
+2. Le serveur utilise les commandes système (`lpr`, `notepad /p`)
+3. L'impression se fait directement sur l'imprimante système
+4. Aucun dialogue n'apparaît
+
+### Mode Réseau (ESC/POS)
+
+1. L'application web envoie une requête HTTP au serveur local
 2. Le serveur convertit le texte en commandes ESC/POS
 3. Le serveur envoie les commandes à l'imprimante réseau via TCP/IP
 4. L'imprimante reçoit les données et imprime le ticket
+
+### Fallback
+
+Si le serveur n'est pas disponible, l'application utilise automatiquement `window.print()` du navigateur.
 
 ## Résolution de problèmes
 

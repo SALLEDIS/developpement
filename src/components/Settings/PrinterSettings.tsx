@@ -13,8 +13,31 @@ const PrinterSettings: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPrinter, setEditingPrinter] = useState<PrinterType | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
   const printService = PrintService.getInstance();
+
+  useEffect(() => {
+    const checkServerStatus = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/health', {
+          method: 'GET',
+          signal: AbortSignal.timeout(2000)
+        });
+        if (response.ok) {
+          setServerStatus('online');
+        } else {
+          setServerStatus('offline');
+        }
+      } catch (error) {
+        setServerStatus('offline');
+      }
+    };
+
+    checkServerStatus();
+    const interval = setInterval(checkServerStatus, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (printers.length > 0) {
@@ -132,6 +155,42 @@ const PrinterSettings: React.FC = () => {
           <p className="text-gray-600">Configuration simple en 1 clic</p>
         </div>
       </div>
+
+      <Card className={serverStatus === 'online' ? 'border-green-200 bg-green-50' : serverStatus === 'offline' ? 'border-yellow-200 bg-yellow-50' : 'border-gray-200'}>
+        <div className="flex items-center gap-3">
+          {serverStatus === 'online' ? (
+            <>
+              <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-green-900">Serveur d'impression actif</h3>
+                <p className="text-sm text-green-700">
+                  Impression directe sans dialogue du navigateur
+                </p>
+              </div>
+            </>
+          ) : serverStatus === 'offline' ? (
+            <>
+              <AlertCircle className="h-6 w-6 text-yellow-600 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-yellow-900">Serveur d'impression hors ligne</h3>
+                <p className="text-sm text-yellow-700">
+                  Fallback: utilisation du dialogue d'impression du navigateur
+                </p>
+                <p className="text-xs text-yellow-600 mt-1">
+                  Pour activer: double-cliquez sur start-print-server.bat (Windows) ou ./start-print-server.sh (Mac/Linux)
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="h-6 w-6 flex-shrink-0 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900">Vérification du serveur...</h3>
+              </div>
+            </>
+          )}
+        </div>
+      </Card>
 
       {printers.length === 0 ? (
         <Card className="text-center py-12">

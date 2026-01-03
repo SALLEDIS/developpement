@@ -562,7 +562,7 @@ export class PrintService {
     const PRINT_SERVER_URL = 'http://localhost:3001/print';
 
     try {
-      console.log(`Envoi au serveur d'impression local pour ${ipAddress}:${port}`);
+      console.log(`Envoi au serveur d'impression pour ${ipAddress}:${port}`);
 
       const response = await fetch(PRINT_SERVER_URL, {
         method: 'POST',
@@ -570,6 +570,7 @@ export class PrintService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          mode: 'network',
           ipAddress,
           port,
           content,
@@ -586,14 +587,16 @@ export class PrintService {
       }
 
       const result = await response.json();
-      console.log('Impression réseau réussie:', result);
+      console.log('✓ Impression réseau réussie:', result);
     } catch (error) {
-      console.error('Erreur d\'impression réseau:', error);
+      console.error('✗ Erreur d\'impression réseau:', error);
 
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error(
-          'Serveur d\'impression non accessible. ' +
-          'Assurez-vous que le serveur d\'impression est démarré (cd print-server && npm start)'
+          'Serveur d\'impression non accessible.\n\n' +
+          'Démarrez le serveur:\n' +
+          'Windows: double-cliquez sur start-print-server.bat\n' +
+          'Mac/Linux: ./start-print-server.sh'
         );
       }
 
@@ -602,9 +605,68 @@ export class PrintService {
   }
 
   private async printToSystemPrinter(content: string, systemPrinter: SystemPrinter): Promise<void> {
+    const PRINT_SERVER_URL = 'http://localhost:3001';
+
+    console.log('PrintService.printToSystemPrinter - Début impression système');
+    console.log('Imprimante:', systemPrinter.name);
+
+    try {
+      console.log('Tentative de connexion au serveur d\'impression...');
+      const healthResponse = await fetch(`${PRINT_SERVER_URL}/health`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(2000)
+      });
+
+      if (healthResponse.ok) {
+        console.log('✓ Serveur d\'impression disponible - utilisation du serveur');
+        return await this.printViaServer(content, systemPrinter.name);
+      }
+    } catch (error) {
+      console.log('✗ Serveur d\'impression non disponible - fallback sur window.print()');
+    }
+
+    return await this.printViaWindowPrint(content, systemPrinter);
+  }
+
+  private async printViaServer(content: string, printerName?: string): Promise<void> {
+    const PRINT_SERVER_URL = 'http://localhost:3001/print';
+
+    try {
+      console.log('Envoi au serveur d\'impression pour imprimante système');
+
+      const response = await fetch(PRINT_SERVER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          mode: 'system',
+          printerName,
+          content,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error ||
+          errorData.details ||
+          `Erreur serveur: ${response.status}`
+        );
+      }
+
+      const result = await response.json();
+      console.log('✓ Impression système via serveur réussie:', result);
+    } catch (error) {
+      console.error('✗ Erreur d\'impression via serveur:', error);
+      throw error;
+    }
+  }
+
+  private async printViaWindowPrint(content: string, systemPrinter: SystemPrinter): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        console.log('PrintService.printToSystemPrinter - Début impression système');
+        console.log('PrintService.printViaWindowPrint - Utilisation de window.print()');
         console.log('Imprimante:', systemPrinter.name);
 
         const iframe = document.createElement('iframe');

@@ -15,7 +15,17 @@
 - Messages d'erreur clairs expliquant le problème
 - Instructions pour résoudre
 
-### Problème 3: Pas d'imprimante par défaut
+### Problème 3: Dialogue d'impression à chaque fois
+**AVANT:** Une fenêtre s'ouvrait à chaque impression et il fallait cliquer manuellement.
+
+**MAINTENANT:**
+- **Serveur d'impression interne créé**
+- Impression directe sans dialogue du navigateur
+- Automatique et silencieux
+- Support imprimantes thermiques ESC/POS
+- Fallback automatique si serveur hors ligne
+
+### Problème 4: Pas d'imprimante par défaut
 **AVANT:** L'imprimante système n'était pas détectée correctement.
 
 **MAINTENANT:**
@@ -24,6 +34,25 @@
 - Fallback automatique si besoin
 
 ## Comment utiliser maintenant
+
+### Étape 0: Serveur d'impression (RECOMMANDÉ)
+
+**Pour une impression automatique sans dialogue:**
+
+1. **Démarrez le serveur d'impression**
+   - Windows: double-cliquez sur `start-print-server.bat`
+   - Mac/Linux: `./start-print-server.sh`
+   - Une fenêtre s'ouvrira avec le serveur
+
+2. **Vérifiez le statut**
+   - Paramètres → Imprimantes
+   - Vous devriez voir: "✓ Serveur d'impression actif"
+
+**Sans serveur:**
+- L'application fonctionne quand même
+- Utilise le dialogue d'impression du navigateur (fallback)
+
+**Plus de détails:** Consultez `SERVEUR_IMPRESSION.md`
 
 ### Étape 1: Configuration initiale
 
@@ -35,7 +64,8 @@
    - Allez dans **Paramètres → Imprimantes**
    - Cliquez sur **"Configurer automatiquement"**
    - Testez avec le bouton **"Tester"**
-   - La fenêtre d'impression devrait s'ouvrir
+   - Avec serveur: impression directe
+   - Sans serveur: fenêtre d'impression s'ouvre
 
 3. **(Optionnel) Ajoutez cuisine/bar**
    - Cliquez sur **"Ajouter"**
