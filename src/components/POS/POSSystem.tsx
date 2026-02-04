@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Plus, Minus, Trash2, CreditCard, Printer, Receipt, DollarSign, Clock, X, Users, Tag } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Trash2, CreditCard, Printer, Receipt, DollarSign, Clock, X, Users, Tag, ChevronUp, ChevronDown, Check, Search, User, LayoutGrid, Pause, RotateCcw } from 'lucide-react';
 import Modal from '../ui/Modal';
 import BillPreview from './BillPreview';
 import TicketPreview from './TicketPreview';
@@ -259,13 +259,13 @@ const POSSystem: React.FC = () => {
 
   if (!isSessionOpen) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="bg-white p-10 md:p-12 rounded-3xl shadow-2xl text-center max-w-md mx-4">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <DollarSign className="h-10 w-10 text-blue-700" />
+      <div className="flex items-center justify-center h-screen bg-[#1e293b]">
+        <div className="bg-[#334155] p-10 md:p-12 rounded-lg text-center max-w-md mx-4 border border-[#475569]">
+          <div className="w-20 h-20 bg-[#0891b2] rounded-lg flex items-center justify-center mx-auto mb-6">
+            <DollarSign className="h-10 w-10 text-white" />
           </div>
-          <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-4 tracking-tight">Session de caisse fermée</h2>
-          <p className="text-slate-600 text-base md:text-lg leading-relaxed">Veuillez ouvrir une session de caisse dans les paramètres pour commencer</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Session de caisse fermee</h2>
+          <p className="text-gray-300 text-base md:text-lg">Veuillez ouvrir une session de caisse dans les parametres pour commencer</p>
         </div>
       </div>
     );
@@ -284,293 +284,271 @@ const POSSystem: React.FC = () => {
   const displayTotal = selectedOrderForPayment ? selectedOrderForPayment.total : total;
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight">Point de vente</h1>
-          <p className="text-slate-600 mt-1 text-sm md:text-base">Utilisateur: <span className="font-medium text-slate-800">{user?.name || 'Admin'}</span></p>
+    <div className="flex h-screen bg-[#1a2332]">
+      {viewMode === 'tables' && (
+        <div className="w-20 bg-[#1a2332] border-r border-[#2d3748] flex flex-col items-center py-4 gap-2">
+          {sections.map(section => (
+            <button
+              key={section}
+              onClick={() => setSelectedSection(section)}
+              className={`w-14 h-14 rounded-lg font-bold text-sm transition-all touch-manipulation ${
+                selectedSection === section
+                  ? 'bg-[#0891b2] text-white'
+                  : 'bg-[#2d3748] text-gray-400 hover:bg-[#374151] hover:text-white'
+              }`}
+            >
+              {section}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {viewMode === 'products' && (
+        <div className="w-32 bg-[#1a2332] border-r border-[#2d3748] flex flex-col">
+          <button
+            onClick={() => { clearCart(); setViewMode('tables'); }}
+            className="h-14 bg-[#0891b2] text-white font-bold text-xs flex items-center justify-center gap-1 hover:bg-[#0e7490] transition-colors touch-manipulation"
+          >
+            <Users className="h-4 w-4" />
+            Tables
+          </button>
+          <div className="flex-1 overflow-y-auto py-2">
+            <button
+              onClick={() => setSelectedCategory('')}
+              className={`w-full py-4 px-2 text-xs font-bold text-center transition-all touch-manipulation ${
+                selectedCategory === ''
+                  ? 'bg-[#0891b2] text-white'
+                  : 'bg-[#2d3748] text-gray-300 hover:bg-[#374151]'
+              }`}
+            >
+              TOUS
+            </button>
+            {categories.map(category => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.name)}
+                className={`w-full py-4 px-2 text-xs font-bold text-center transition-all touch-manipulation ${
+                  selectedCategory === category.name
+                    ? 'bg-[#0891b2] text-white'
+                    : 'bg-[#2d3748] text-gray-300 hover:bg-[#374151]'
+                }`}
+              >
+                {category.name.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="h-12 bg-[#1a2332] border-b border-[#2d3748] flex items-center justify-between px-4">
+          <div className="flex items-center gap-4">
+            <LayoutGrid className="h-5 w-5 text-gray-400" />
+            <span className="text-gray-400 text-sm">{user?.name || 'Admin'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode(viewMode === 'tables' ? 'products' : 'tables')}
+              className="px-4 py-1.5 bg-[#0891b2] text-white text-xs font-bold rounded hover:bg-[#0e7490] transition-colors touch-manipulation flex items-center gap-2"
+            >
+              <Users className="h-4 w-4" />
+              Tables
+            </button>
+          </div>
         </div>
 
-        {viewMode === 'tables' ? (
-          <div className="space-y-5 md:space-y-6">
-            <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2">
-              {sections.map(section => (
-                <button
-                  key={section}
-                  onClick={() => setSelectedSection(section)}
-                  className={`flex-1 min-w-[80px] py-4 md:py-5 px-6 md:px-8 rounded-2xl font-bold text-lg md:text-xl transition-all duration-300 touch-manipulation ${
-                    selectedSection === section
-                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/50 scale-105'
-                      : 'bg-white text-slate-700 hover:bg-slate-50 hover:shadow-md border-2 border-slate-200 hover:border-blue-300'
-                  }`}
-                >
-                  Section {section}
-                </button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+        <div className="flex-1 overflow-auto p-2 bg-[#1a2332]">
+          {viewMode === 'tables' ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
               {filteredTables.map(table => (
                 <button
                   key={table.id}
                   onClick={() => handleTableClick(table, table.order)}
-                  className={`group p-5 md:p-6 rounded-2xl border-2 transition-all duration-300 touch-manipulation transform hover:scale-105 ${
+                  className={`relative h-24 rounded-lg transition-all touch-manipulation flex flex-col items-center justify-center ${
                     table.status === 'occupied'
-                      ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-orange-300 hover:border-orange-400 hover:shadow-lg hover:shadow-orange-200/50'
-                      : 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-xl hover:shadow-blue-100/50'
+                      ? 'bg-[#f97316] hover:bg-[#ea580c]'
+                      : 'bg-[#0891b2] hover:bg-[#0e7490]'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-                        table.status === 'occupied' ? 'bg-orange-200' : 'bg-slate-100 group-hover:bg-blue-100'
-                      }`}>
-                        <Users className={`h-5 w-5 ${table.status === 'occupied' ? 'text-orange-700' : 'text-slate-500 group-hover:text-blue-600'}`} />
-                      </div>
-                      <span className="font-bold text-xl md:text-2xl text-slate-900">Table {table.number}</span>
-                    </div>
-                    <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide ${
-                      table.status === 'occupied'
-                        ? 'bg-orange-200 text-orange-900'
-                        : 'bg-emerald-100 text-emerald-800'
-                    }`}>
-                      {table.status === 'occupied' ? 'Occupée' : 'Libre'}
-                    </span>
-                  </div>
-
+                  <span className="text-white font-bold text-lg">Table {table.number}</span>
                   {table.order && (
-                    <div className="mt-4 pt-4 border-t border-orange-200">
-                      <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="text-slate-600 font-medium">{table.order.items.length} article{table.order.items.length > 1 ? 's' : ''}</span>
-                        <div className="flex items-center gap-1.5 text-slate-500">
-                          <Clock className="h-3.5 w-3.5" />
-                          <span className="font-mono text-xs">{formatTime(new Date(table.order.createdAt))}</span>
-                        </div>
-                      </div>
-                      <div className="mt-2 text-right">
-                        <span className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
-                          {table.order.total.toLocaleString('fr-FR')} <span className="text-base text-slate-600">CFA</span>
-                        </span>
-                      </div>
-                    </div>
+                    <span className="text-white/90 text-sm font-semibold mt-1">
+                      {table.order.total.toLocaleString('fr-FR')} F
+                    </span>
                   )}
+                  <span className={`absolute top-2 right-2 w-3 h-3 rounded-full ${
+                    table.status === 'occupied' ? 'bg-white/50' : 'bg-white/30'
+                  }`} />
                 </button>
               ))}
             </div>
-          </div>
-        ) : (
-          <div className="space-y-5">
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={() => setSelectedCategory('')}
-                className={`px-5 md:px-6 py-3 rounded-xl font-bold text-sm md:text-base transition-all duration-300 touch-manipulation ${
-                  selectedCategory === ''
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/50'
-                    : 'bg-white text-slate-700 border-2 border-slate-200 hover:bg-slate-50 hover:border-blue-300 hover:shadow-md'
-                }`}
-              >
-                Tous les produits
-              </button>
-              {categories.map(category => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.name)}
-                  className={`px-5 md:px-6 py-3 rounded-xl font-bold text-sm md:text-base transition-all duration-300 touch-manipulation ${
-                    selectedCategory === category.name
-                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/50'
-                      : 'bg-white text-slate-700 border-2 border-slate-200 hover:bg-slate-50 hover:border-blue-300 hover:shadow-md'
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1">
               {displayedProducts.map(product => (
                 <button
                   key={product.id}
                   onClick={() => handleProductClick(product)}
-                  className="group bg-white border-2 border-slate-200 rounded-2xl p-4 md:p-5 hover:border-blue-400 hover:shadow-xl hover:shadow-blue-100/50 transition-all duration-300 text-left touch-manipulation transform hover:scale-105"
+                  className="bg-[#22d3ee] hover:bg-[#06b6d4] h-20 md:h-24 rounded transition-all touch-manipulation flex flex-col justify-between p-2 text-left relative group"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-bold text-base md:text-lg text-slate-900 leading-tight line-clamp-2">
-                      {product.name}
-                    </h3>
-                    {product.sizes && product.sizes.length > 0 && (
-                      <div className="flex-shrink-0 ml-2 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Tag className="h-4 w-4 text-blue-600" />
-                      </div>
-                    )}
-                  </div>
-
-                  {product.sizes && product.sizes.length > 0 ? (
-                    <div className="space-y-1.5 text-xs md:text-sm text-slate-600">
-                      {product.sizes.map((size: any) => (
-                        <div key={size.name} className="flex justify-between items-center py-1">
-                          <span className="font-medium">{size.name}</span>
-                          <span className="font-bold text-slate-900">{size.price.toLocaleString('fr-FR')}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="mt-2">
-                      <div className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
-                        {product.price.toLocaleString('fr-FR')}
-                      </div>
-                      <div className="text-xs md:text-sm font-semibold text-slate-500 mt-0.5">CFA</div>
-                    </div>
+                  <span className="text-[#0e4d5c] font-bold text-xs md:text-sm leading-tight line-clamp-2 uppercase">
+                    {product.name}
+                  </span>
+                  <span className="text-[#0e4d5c] font-bold text-sm md:text-base self-end">
+                    {product.sizes && product.sizes.length > 0
+                      ? product.sizes[0].price.toLocaleString('fr-FR')
+                      : product.price.toLocaleString('fr-FR')}
+                  </span>
+                  {product.sizes && product.sizes.length > 0 && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-[#0e4d5c] rounded-full" />
                   )}
                 </button>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {viewMode === 'products' && (
-        <div className="w-full md:w-[500px] lg:w-[600px] xl:w-[700px] bg-white border-l border-slate-200 flex flex-col h-screen shadow-2xl">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-5 md:px-6 py-5 md:py-6 flex items-center justify-between">
-            <div className="flex items-center gap-3 md:gap-4">
-              <div className="w-12 h-12 md:w-14 md:h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                <ShoppingCart className="h-6 w-6 md:h-7 md:w-7 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg md:text-xl font-bold text-white tracking-tight">
-                  {selectedTableId ? `Table ${tables.find(t => t.id === selectedTableId)?.number}` : 'Nouvelle Commande'}
-                </h2>
-                <p className="text-xs md:text-sm text-blue-100 font-medium">{displayItems.length} article{displayItems.length > 1 ? 's' : ''}</p>
-              </div>
-            </div>
+        <div className="w-80 lg:w-96 bg-[#374151] flex flex-col h-screen border-l border-[#4b5563]">
+          <div className="px-4 py-3 border-b border-[#4b5563] flex items-center justify-between">
+            <h2 className="text-[#ef4444] font-bold text-lg">
+              {selectedTableId ? `Table ${tables.find(t => t.id === selectedTableId)?.number}` : 'Vente directe'}
+            </h2>
             <button
               onClick={() => { clearCart(); setViewMode('tables'); }}
-              className="text-white hover:bg-white/20 p-2 md:p-2.5 rounded-xl transition-all duration-200"
+              className="text-gray-400 hover:text-white p-1 transition-colors"
             >
-              <X className="h-6 w-6" />
+              <ChevronUp className="h-5 w-5" />
             </button>
           </div>
 
-          <div className="bg-slate-50 px-5 md:px-6 py-3 border-b border-slate-200 hidden md:flex items-center gap-4 font-bold text-xs text-slate-600 uppercase tracking-wide">
+          <div className="bg-[#2d3748] px-3 py-2 flex items-center text-xs font-bold text-gray-400 border-b border-[#4b5563]">
             <div className="flex-1">Article</div>
-            <div className="w-28 text-center">Quantité</div>
-            <div className="w-32 text-right">Total</div>
-            <div className="w-10"></div>
+            <div className="w-12 text-center">Qte</div>
+            <div className="w-20 text-right">Px Total</div>
           </div>
 
-          <div className="flex-1 overflow-auto bg-white">
+          <div className="flex-1 overflow-auto bg-[#2d3748]">
             {displayItems.length > 0 ? (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-[#374151]">
                 {displayItems.map(item => (
-                  <div key={item.id} className="px-5 md:px-6 py-4 md:py-5 flex items-center gap-3 md:gap-4 hover:bg-slate-50 transition-colors">
+                  <div key={item.id} className="px-3 py-2 flex items-center gap-2 hover:bg-[#374151] transition-colors text-sm">
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-base md:text-lg text-slate-900 truncate">{item.productName}</p>
-                      {item.size && <p className="text-xs md:text-sm text-slate-500 mt-1 font-medium">{item.size}</p>}
-                      <p className="text-sm md:text-base text-slate-600 mt-1 font-semibold">{item.price.toLocaleString('fr-FR')} <span className="text-xs text-slate-500">CFA</span></p>
+                      <p className="text-white font-medium truncate">{item.productName}</p>
+                      {item.size && <p className="text-gray-400 text-xs">{item.size}</p>}
                     </div>
-
-                    {!selectedOrderForPayment && (
-                      <div className="w-28 flex-shrink-0">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="w-9 h-9 md:w-10 md:h-10 bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-700 rounded-xl transition-all duration-200 flex items-center justify-center touch-manipulation font-bold"
-                          >
-                            <Minus className="h-4 w-4 md:h-5 md:w-5" />
-                          </button>
-                          <span className="font-bold text-lg md:text-xl text-slate-900 w-12 text-center">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="w-9 h-9 md:w-10 md:h-10 bg-slate-100 hover:bg-emerald-100 hover:text-emerald-600 text-slate-700 rounded-xl transition-all duration-200 flex items-center justify-center touch-manipulation font-bold"
-                          >
-                            <Plus className="h-4 w-4 md:h-5 md:w-5" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedOrderForPayment && (
-                      <div className="w-28 text-center font-bold text-lg text-slate-700">{item.quantity}</div>
-                    )}
-
-                    <div className="w-24 md:w-32 text-right flex-shrink-0">
-                      <p className="font-bold text-lg md:text-xl text-slate-900 tracking-tight">
-                        {(item.price * item.quantity).toLocaleString('fr-FR')}
-                      </p>
-                      <p className="text-xs md:text-sm text-slate-500 font-semibold">CFA</p>
+                    <div className="w-12 text-center text-white font-bold">{item.quantity}</div>
+                    <div className="w-20 text-right text-white font-bold">
+                      {(item.price * item.quantity).toLocaleString('fr-FR')}
                     </div>
-
-                    {!selectedOrderForPayment && (
-                      <div className="w-10 flex justify-end flex-shrink-0">
-                        <button
-                          onClick={() => removeFromCart(item.id)}
-                          className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-xl transition-all duration-200 touch-manipulation"
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-full text-slate-400">
-                <div className="text-center py-12">
-                  <div className="w-24 h-24 mx-auto mb-6 bg-slate-100 rounded-3xl flex items-center justify-center">
-                    <ShoppingCart className="h-12 w-12 text-slate-300" />
-                  </div>
-                  <p className="text-lg font-bold text-slate-500">Panier vide</p>
-                  <p className="text-sm text-slate-400 mt-2">Ajoutez des articles pour commencer</p>
-                </div>
+              <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
+                Aucun article
               </div>
             )}
           </div>
 
-          <div className="border-t border-slate-200 bg-white shadow-2xl">
-            <div className="px-5 md:px-6 py-5 md:py-6 bg-gradient-to-br from-slate-50 to-blue-50">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs md:text-sm font-bold text-slate-700 uppercase tracking-wider">Total à payer</span>
-                <div className="flex items-center gap-2 text-slate-600">
-                  <Clock className="h-4 w-4" />
-                  <span className="text-sm font-mono font-bold">{formatTime(currentTime)}</span>
-                </div>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <div className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight">
-                  {displayTotal.toLocaleString('fr-FR')}
-                </div>
-                <div className="text-xl md:text-2xl font-bold text-slate-600">CFA</div>
-              </div>
+          <div className="border-t border-[#4b5563] bg-[#374151]">
+            <div className="px-3 py-2 flex items-center justify-center gap-2">
+              <ChevronUp className="h-4 w-4 text-gray-400" />
+              <ChevronDown className="h-4 w-4 text-gray-400" />
+              <Check className="h-4 w-4 text-gray-400 ml-4" />
             </div>
 
-            <div className="px-5 md:px-6 py-4 md:py-5 space-y-3 bg-white">
-              {!selectedOrderForPayment && (
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => { clearCart(); setViewMode('tables'); }}
-                    disabled={cart.length === 0}
-                    className="px-4 md:px-5 py-4 md:py-5 bg-slate-100 hover:bg-red-50 border-2 border-slate-300 hover:border-red-400 text-slate-700 hover:text-red-700 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-sm md:text-base touch-manipulation"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                    <span>Annuler</span>
-                  </button>
-                  <button
-                    onClick={handleSendToPrinter}
-                    disabled={cart.length === 0}
-                    className="px-4 md:px-5 py-4 md:py-5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-orange-500/30 font-bold text-sm md:text-base touch-manipulation"
-                  >
-                    <Printer className="h-5 w-5" />
-                    <span>Envoyer</span>
-                  </button>
-                </div>
-              )}
+            {!selectedOrderForPayment && (
+              <div className="grid grid-cols-5 gap-1 px-2 pb-2">
+                <button className="bg-[#4b5563] hover:bg-[#6b7280] p-2 rounded flex flex-col items-center justify-center text-gray-300 transition-colors touch-manipulation">
+                  <LayoutGrid className="h-5 w-5" />
+                  <span className="text-[10px] mt-1">Quantite</span>
+                </button>
+                <button
+                  onClick={() => cart.length > 0 && clearCart()}
+                  className="bg-[#4b5563] hover:bg-[#ef4444] p-2 rounded flex flex-col items-center justify-center text-[#ef4444] hover:text-white transition-colors touch-manipulation"
+                >
+                  <X className="h-5 w-5" />
+                  <span className="text-[10px] mt-1">Supprimer</span>
+                </button>
+                <button className="bg-[#4b5563] hover:bg-[#6b7280] p-2 rounded flex flex-col items-center justify-center text-gray-300 transition-colors touch-manipulation">
+                  <Tag className="h-5 w-5" />
+                  <span className="text-[10px] mt-1">Remise</span>
+                </button>
+                <button className="bg-[#4b5563] hover:bg-[#6b7280] p-2 rounded flex flex-col items-center justify-center text-gray-300 transition-colors touch-manipulation">
+                  <Receipt className="h-5 w-5" />
+                  <span className="text-[10px] mt-1">Remarque</span>
+                </button>
+                <button className="bg-[#4b5563] hover:bg-[#6b7280] p-2 rounded flex flex-col items-center justify-center text-gray-300 transition-colors touch-manipulation">
+                  <DollarSign className="h-5 w-5" />
+                  <span className="text-[10px] mt-1">Peser</span>
+                </button>
+              </div>
+            )}
+          </div>
 
+          <div className="bg-[#2d3748] border-t border-[#4b5563] px-3 py-3">
+            <div className="text-3xl font-mono text-gray-300 text-center mb-3">
+              {formatTime(currentTime)}
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <button className="bg-[#4b5563] hover:bg-[#6b7280] p-3 rounded flex flex-col items-center justify-center text-gray-300 transition-colors touch-manipulation">
+                <User className="h-6 w-6" />
+                <span className="text-xs mt-1">Client</span>
+              </button>
+              <button className="bg-[#4b5563] hover:bg-[#6b7280] p-3 rounded flex flex-col items-center justify-center text-gray-300 transition-colors touch-manipulation">
+                <Minus className="h-6 w-6" />
+                <span className="text-xs mt-1">Separateur</span>
+              </button>
               <button
                 onClick={handleProcessPayment}
                 disabled={displayItems.length === 0}
-                className="w-full px-6 py-5 md:py-6 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xl shadow-emerald-500/40 font-black text-lg md:text-xl touch-manipulation transform hover:scale-105 active:scale-95"
+                className="bg-[#ef4444] hover:bg-[#dc2626] p-3 rounded flex flex-col items-center justify-center text-white transition-colors touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <CreditCard className="h-7 w-7" />
-                <span>ENCAISSER MAINTENANT</span>
+                <Receipt className="h-6 w-6" />
+                <span className="text-xs mt-1">Ticket</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex-1 flex items-center bg-[#1a2332] rounded border border-[#4b5563]">
+                <span className="px-2 text-gray-400 text-xs">Code article</span>
+                <input
+                  type="text"
+                  className="flex-1 bg-transparent text-white px-2 py-2 text-sm outline-none"
+                  placeholder=""
+                />
+                <Search className="h-4 w-4 text-gray-400 mr-2" />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-4xl font-bold text-white">
+                {displayTotal.toLocaleString('fr-FR')} <span className="text-2xl">CFA</span>
+              </div>
+              <span className="text-gray-400 text-lg">{displayItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
+              <button
+                onClick={handleSendToPrinter}
+                disabled={cart.length === 0 || selectedOrderForPayment !== null}
+                className="bg-[#1f2937] hover:bg-[#374151] p-3 rounded flex flex-col items-center justify-center text-gray-300 transition-colors touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed col-span-1"
+              >
+                <Printer className="h-6 w-6" />
+                <span className="text-xs mt-1">Sur place</span>
+              </button>
+              <button className="bg-[#4b5563] hover:bg-[#6b7280] p-3 rounded flex flex-col items-center justify-center text-gray-300 transition-colors touch-manipulation">
+                <DollarSign className="h-6 w-6" />
+                <span className="text-xs mt-1">Tiroir</span>
+              </button>
+              <button className="bg-[#0891b2] hover:bg-[#0e7490] p-3 rounded flex flex-col items-center justify-center text-white transition-colors touch-manipulation">
+                <Pause className="h-6 w-6" />
+                <span className="text-xs mt-1">Attente</span>
+              </button>
+              <button className="bg-[#4b5563] hover:bg-[#6b7280] p-3 rounded flex flex-col items-center justify-center text-gray-300 transition-colors touch-manipulation">
+                <RotateCcw className="h-6 w-6" />
+                <span className="text-xs mt-1">Rap. ticket</span>
               </button>
             </div>
           </div>
@@ -578,29 +556,33 @@ const POSSystem: React.FC = () => {
       )}
 
       {selectedProduct && (
-        <Modal
-          isOpen={true}
-          onClose={() => setSelectedProduct(null)}
-          title={`Choisir la taille - ${selectedProduct.name}`}
-        >
-          <div className="space-y-3 md:space-y-4">
-            {selectedProduct.sizes.map((size: any) => (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#374151] rounded-lg w-full max-w-md border border-[#4b5563]">
+            <div className="px-4 py-3 border-b border-[#4b5563] flex items-center justify-between">
+              <h3 className="text-white font-bold">{selectedProduct.name}</h3>
               <button
-                key={size.name}
-                onClick={() => handleSizeSelect(size.name)}
-                className="w-full p-5 md:p-6 bg-white border-2 border-slate-200 rounded-2xl hover:border-blue-500 hover:bg-blue-50 hover:shadow-lg transition-all duration-300 flex items-center justify-between group touch-manipulation transform hover:scale-105"
+                onClick={() => setSelectedProduct(null)}
+                className="text-gray-400 hover:text-white p-1"
               >
-                <span className="text-lg md:text-xl font-bold text-slate-900 group-hover:text-blue-700 transition-colors">{size.name}</span>
-                <div className="text-right">
-                  <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
-                    {size.price.toLocaleString('fr-FR')}
-                  </div>
-                  <div className="text-sm text-slate-500 font-semibold">CFA</div>
-                </div>
+                <X className="h-5 w-5" />
               </button>
-            ))}
+            </div>
+            <div className="p-4 space-y-2">
+              {selectedProduct.sizes.map((size: any) => (
+                <button
+                  key={size.name}
+                  onClick={() => handleSizeSelect(size.name)}
+                  className="w-full p-4 bg-[#22d3ee] hover:bg-[#06b6d4] rounded-lg transition-all flex items-center justify-between touch-manipulation"
+                >
+                  <span className="text-[#0e4d5c] font-bold text-lg">{size.name}</span>
+                  <span className="text-[#0e4d5c] font-bold text-xl">
+                    {size.price.toLocaleString('fr-FR')} CFA
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
-        </Modal>
+        </div>
       )}
 
       {showBillPreview && (
